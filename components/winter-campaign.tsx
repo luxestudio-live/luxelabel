@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
+import { getImageUrl } from "@/lib/utils"
 
 export function WinterCampaign() {
   const { ref, isVisible } = useScrollAnimation()
@@ -35,7 +36,7 @@ export function WinterCampaign() {
             className={`relative aspect-[3/4] overflow-hidden rounded-lg transition-all duration-700 delay-200 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}
           >
             <img
-              src="/woman-in-brown-winter-coat-snowy-landscape-luxury-.jpg"
+              src={getImageUrl("/woman-in-brown-winter-coat-snowy-landscape-luxury-.jpg")}
               alt="Winter Collection"
               className="h-full w-full object-cover hover:scale-105 transition-transform duration-700"
             />

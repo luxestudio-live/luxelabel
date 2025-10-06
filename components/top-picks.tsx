@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
+import { getImageUrl } from "@/lib/utils"
 
 export function TopPicks() {
   const { ref, isVisible } = useScrollAnimation()
@@ -10,17 +11,17 @@ export function TopPicks() {
     {
       name: "The Lumina Dress",
       price: "Rs. 1,299",
-      image: "/elegant-burgundy-evening-dress-luxury-fashion.jpg",
+      image: getImageUrl("/elegant-burgundy-evening-dress-luxury-fashion.jpg"),
     },
     {
       name: "Elegance Handbag",
       price: "Rs. 899",
-      image: "/luxury-brown-leather-handbag-designer-bag.jpg",
+      image: getImageUrl("/luxury-brown-leather-handbag-designer-bag.jpg"),
     },
     {
       name: "Timeless Scarf",
       price: "Rs. 349",
-      image: "/cream-beige-cashmere-scarf-luxury-accessory.jpg",
+      image: getImageUrl("/cream-beige-cashmere-scarf-luxury-accessory.jpg"),
     },
   ]
 

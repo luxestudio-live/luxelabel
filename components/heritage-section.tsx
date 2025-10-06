@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
+import { getImageUrl } from "@/lib/utils"
 
 export function HeritageSection() {
   const { ref, isVisible } = useScrollAnimation()
@@ -15,7 +16,7 @@ export function HeritageSection() {
             className={`relative aspect-[4/3] overflow-hidden rounded-lg transition-all duration-700 ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}
           >
             <img
-              src="/hands-crafting-luxury-leather-handbag-artisan-work.jpg"
+              src={getImageUrl("/hands-crafting-luxury-leather-handbag-artisan-work.jpg")}
               alt="Craftsmanship"
               className="h-full w-full object-cover hover:scale-105 transition-transform duration-700"
             />

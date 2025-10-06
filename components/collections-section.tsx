@@ -1,6 +1,7 @@
 "use client"
 
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
+import { getImageUrl } from "@/lib/utils"
 
 export function CollectionsSection() {
   const { ref, isVisible } = useScrollAnimation()
@@ -8,15 +9,15 @@ export function CollectionsSection() {
   const collections = [
     {
       title: "Women's Collection",
-      image: "/elegant-woman-in-white-dress-luxury-fashion.jpg",
+      image: getImageUrl("/elegant-woman-in-white-dress-luxury-fashion.jpg"),
     },
     {
-      title: "Men's Essentials",
-      image: "/man-in-tailored-grey-suit-luxury-menswear.jpg",
+      title: "Men's Essentials", 
+      image: getImageUrl("/man-in-tailored-grey-suit-luxury-menswear.jpg"),
     },
     {
       title: "New Arrivals",
-      image: "/luxury-fashion-accessories-hand-jewelry.jpg",
+      image: getImageUrl("/luxury-fashion-accessories-hand-jewelry.jpg"),
     },
   ]
 

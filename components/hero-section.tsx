@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { getImageUrl } from "@/lib/utils"
 
 export function HeroSection() {
   return (
@@ -8,7 +9,7 @@ export function HeroSection() {
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src="/elegant-woman-in-flowing-beige-dress-minimal-backg.jpg"
+          src={getImageUrl("/elegant-woman-in-flowing-beige-dress-minimal-backg.jpg")}
           alt="Elegant fashion"
           className="h-full w-full object-cover animate-fade-in"
         />
