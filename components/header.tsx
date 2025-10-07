@@ -14,7 +14,7 @@ export function Header() {
             <div className="h-5 w-1 bg-foreground transition-all duration-300 hover:h-6" />
             <div className="h-5 w-1 bg-foreground transition-all duration-300 hover:h-6" />
           </div>
-          <span className="text-lg font-semibold tracking-tight">LuxeLabel</span>
+          <span className="text-lg font-semibold tracking-tight">Luxxelabels</span>
         </div>
 
         {/* Navigation */}

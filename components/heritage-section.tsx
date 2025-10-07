@@ -30,7 +30,7 @@ export function HeritageSection() {
               Crafted with Heritage, Designed for Tomorrow
             </h2>
             <p className="text-muted-foreground leading-relaxed text-balance">
-              LuxeLabel marries timeless artistry with modern innovation, creating pieces that transcend seasons. Our
+              Luxxelabels marries timeless artistry with modern innovation, creating pieces that transcend seasons. Our
               commitment to sustainability and ethical craftsmanship ensures that every item is both luxurious and
               conscious.
             </p>
