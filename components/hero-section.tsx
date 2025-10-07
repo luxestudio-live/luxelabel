@@ -11,25 +11,28 @@ export function HeroSection() {
         <img
           src={getImageUrl("/elegant-woman-in-flowing-beige-dress-minimal-backg.jpg")}
           alt="Elegant fashion"
-          className="h-full w-full object-cover animate-fade-in"
+          className="h-full w-full object-cover object-center md:object-center animate-fade-in"
+          style={{
+            objectPosition: 'center 30%'
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-[oklch(0.98_0.02_80)]/40 to-transparent" />
       </div>
 
       {/* Content */}
-      <div className="relative container h-full flex flex-col items-center justify-center text-center px-4">
-        <h1 className="text-5xl md:text-7xl font-serif font-light tracking-tight text-balance mb-6 opacity-0 animate-fade-in-up">
-          The New Era of
-          <br />
-          Luxe Elegance
+      <div className="relative container h-full flex flex-col items-center justify-center text-center px-4 md:px-8">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-serif font-light tracking-tight text-balance mb-4 md:mb-6 opacity-0 animate-fade-in-up leading-tight">
+          <span className="block sm:inline">The New Era of</span>
+          <br className="hidden sm:block" />
+          <span className="block sm:inline">Luxe Elegance</span>
         </h1>
-        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mb-8 text-balance opacity-0 animate-fade-in-up animation-delay-200">
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-lg md:max-w-2xl mb-6 md:mb-8 text-balance opacity-0 animate-fade-in-up animation-delay-200 leading-relaxed">
           Discover where timeless sophistication meets modern craftsmanship in our handpicked luxury exclusive
           collection.
         </p>
         <Button
           size="lg"
-          className="rounded-full px-8 bg-gradient-to-r from-foreground to-[oklch(0.25_0_0)] text-background hover:from-[oklch(0.25_0_0)] hover:to-foreground transition-all duration-500 hover:scale-105 hover:shadow-xl opacity-0 animate-fade-in-up animation-delay-400"
+          className="rounded-full px-6 md:px-8 bg-gradient-to-r from-foreground to-[oklch(0.25_0_0)] text-background hover:from-[oklch(0.25_0_0)] hover:to-foreground transition-all duration-500 hover:scale-105 hover:shadow-xl opacity-0 animate-fade-in-up animation-delay-400"
         >
           Shop Latest Collection
         </Button>

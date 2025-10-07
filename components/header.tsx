@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Search, User, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,30 +20,30 @@ export function Header() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <a
-            href="#"
+          <Link
+            href="/"
             className="text-sm font-medium hover:text-muted-foreground transition-all duration-300 hover:scale-105"
           >
             Homepage
-          </a>
-          <a
+          </Link>
+          <Link
             href="#"
             className="text-sm font-medium hover:text-muted-foreground transition-all duration-300 hover:scale-105"
           >
             Catalog
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/about"
             className="text-sm font-medium hover:text-muted-foreground transition-all duration-300 hover:scale-105"
           >
             About Us
-          </a>
-          <a
+          </Link>
+          <Link
             href="#"
             className="text-sm font-medium hover:text-muted-foreground transition-all duration-300 hover:scale-105"
           >
             Contact Us
-          </a>
+          </Link>
         </nav>
 
         {/* Search and Actions */}
