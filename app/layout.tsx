@@ -5,8 +5,17 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Luxxelabels',
-  description: 'Premium luxury fashion and accessories',
+  title: 'Luxxe Labels - High Fashion, Higher Standards',
+  description: 'Discover timeless elegance and unwavering commitment to quality with Luxxe Labels. Premium luxury fashion and accessories designed with passion and precision.',
+  keywords: 'luxury fashion, high fashion, premium accessories, designer clothing, luxury brands, Luxxe Labels',
+  authors: [{ name: 'Luxxe Labels' }],
+  creator: 'Luxxe Labels',
+  publisher: 'Luxxe Labels',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   generator: 'v0.app',
 }
 

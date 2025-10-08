@@ -4,19 +4,14 @@ import Link from "next/link"
 import { Search, User, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Logo } from "@/components/logo"
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <div className="h-5 w-1 bg-foreground transition-all duration-300 hover:h-6" />
-            <div className="h-5 w-1 bg-foreground transition-all duration-300 hover:h-6" />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">Luxxelabels</span>
-        </div>
+        <Logo variant="header" />
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
@@ -39,7 +34,7 @@ export function Header() {
             About Us
           </Link>
           <Link
-            href="#"
+            href="/contact"
             className="text-sm font-medium hover:text-muted-foreground transition-all duration-300 hover:scale-105"
           >
             Contact Us

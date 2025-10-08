@@ -1,0 +1,6 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="16" height="16" fill="white"/>
+  <text x="8" y="6" font-family="serif" font-size="4" font-weight="300" text-anchor="middle" fill="black" letter-spacing="0.5px">LUXXE</text>
+  <text x="8" y="10" font-family="serif" font-size="2" font-weight="400" text-anchor="middle" fill="black" letter-spacing="0.25px">LABELS</text>
+  <line x1="6" y1="11" x2="10" y2="11" stroke="black" stroke-width="0.25"/>
+</svg>
