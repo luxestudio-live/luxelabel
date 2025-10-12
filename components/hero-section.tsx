@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getImageUrl } from "@/lib/utils"
 
@@ -30,12 +31,14 @@ export function HeroSection() {
           Discover where timeless sophistication meets modern craftsmanship in our handpicked luxury exclusive
           collection.
         </p>
-        <Button
-          size="lg"
-          className="rounded-full px-6 md:px-8 bg-gradient-to-r from-foreground to-[oklch(0.25_0_0)] text-background hover:from-[oklch(0.25_0_0)] hover:to-foreground transition-all duration-500 hover:scale-105 hover:shadow-xl opacity-0 animate-fade-in-up animation-delay-400"
-        >
-          Shop Latest Collection
-        </Button>
+        <Link href="/catalog">
+          <Button
+            size="lg"
+            className="rounded-full px-6 md:px-8 bg-gradient-to-r from-foreground to-[oklch(0.25_0_0)] text-background hover:from-[oklch(0.25_0_0)] hover:to-foreground transition-all duration-500 hover:scale-105 hover:shadow-xl opacity-0 animate-fade-in-up animation-delay-400"
+          >
+            Shop Latest Collection
+          </Button>
+        </Link>
       </div>
     </section>
   )

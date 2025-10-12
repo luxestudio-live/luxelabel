@@ -29,7 +29,7 @@ export function Header() {
             Homepage
           </Link>
           <Link
-            href="#"
+            href="/catalog"
             className="text-sm font-medium hover:text-muted-foreground transition-all duration-300 hover:scale-105"
           >
             Catalog
@@ -106,7 +106,7 @@ export function Header() {
               Homepage
             </Link>
             <Link
-              href="#"
+              href="/catalog"
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-sm font-medium hover:text-muted-foreground transition-colors duration-300 py-2"
             >

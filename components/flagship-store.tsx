@@ -1,6 +1,7 @@
 "use client"
 
-import { getImageUrl } from "@/lib/utils"
+import React from "react"
+import Image from "next/image"
 
 export function FlagshipStore() {
   return (
@@ -26,10 +27,10 @@ export function FlagshipStore() {
                   {/* Grid lines */}
                   <div className="absolute inset-0">
                     {[...Array(10)].map((_, i) => (
-                      <div key={`h-${i}`} className="absolute w-full h-[1px] bg-border/20" style={{top: `${i * 10}%`}} />
+                      <div key={`grid-horizontal-${i}`} className="absolute w-full h-[1px] bg-border/20" style={{top: `${i * 10}%`}} />
                     ))}
                     {[...Array(10)].map((_, i) => (
-                      <div key={`v-${i}`} className="absolute h-full w-[1px] bg-border/20" style={{left: `${i * 10}%`}} />
+                      <div key={`grid-vertical-${i}`} className="absolute h-full w-[1px] bg-border/20" style={{left: `${i * 10}%`}} />
                     ))}
                   </div>
                   

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useScrollAnimation } from "@/hooks/use-scroll-animation"
 import { getImageUrl } from "@/lib/utils"
 
@@ -32,8 +33,9 @@ export function CollectionsSection() {
 
         <div className="grid md:grid-cols-3 gap-6">
           {collections.map((collection, index) => (
-            <div
+            <Link
               key={collection.title}
+              href="/catalog"
               className={`group relative aspect-[3/4] overflow-hidden rounded-lg cursor-pointer transition-all duration-700 hover:shadow-2xl ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
               }`}
@@ -48,7 +50,7 @@ export function CollectionsSection() {
               <div className="absolute bottom-0 left-0 right-0 p-6 transition-transform duration-300 group-hover:translate-y-[-8px]">
                 <h3 className="text-2xl font-serif text-white text-balance">{collection.title}</h3>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
