@@ -4,9 +4,7 @@ const nextConfig = {
   trailingSlash: true,
   basePath: process.env.NODE_ENV === 'production' ? '/luxelabel' : '',
   assetPrefix: process.env.NODE_ENV === 'production' ? '/luxelabel/' : '',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // eslint config removed (deprecated in Next.js)
   typescript: {
     ignoreBuildErrors: true,
   },

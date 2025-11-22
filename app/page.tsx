@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { OffersBanner } from "@/components/OffersBanner"
 import { HeroSection } from "@/components/hero-section"
 import { HeritageSection } from "@/components/heritage-section"
 import { CollectionsSection } from "@/components/collections-section"
@@ -11,6 +12,7 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       <Header />
+      <OffersBanner />
       <HeroSection />
       <HeritageSection />
       <CollectionsSection />
