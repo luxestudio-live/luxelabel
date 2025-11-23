@@ -33,6 +33,21 @@ type ErrorState = {
 };
 
 export default function LoginPage() {
+    const [showReset, setShowReset] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
+    const [resetSuccess, setResetSuccess] = useState("");
+    const [resetError, setResetError] = useState("");
+    const handlePasswordReset = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setResetSuccess("");
+      setResetError("");
+      try {
+        await import("firebase/auth").then(m => m.sendPasswordResetEmail(auth, resetEmail));
+        setResetSuccess("Password reset email sent. Please check your inbox.");
+      } catch (err: any) {
+        setResetError(err?.message || "Failed to send password reset email.");
+      }
+    };
   const [tab, setTab] = useState(0);
   const [otpSent, setOtpSent] = useState(false);
   const [countryCode, setCountryCode] = useState("+91");
@@ -50,12 +65,20 @@ export default function LoginPage() {
     setSuccess("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      setSuccess("Login successful! Redirecting to your profile...");
+      setSuccess("Logged in Successfully");
       setTimeout(() => {
-        router.push("/profile");
+        router.push("/");
       }, 1500);
     } catch (err: any) {
-      setErrors({ email: "Invalid credentials", general: err?.message || "Login failed" });
+      let message = "Login failed";
+      if (err.code === "auth/user-not-found") {
+        message = "No account found with this email. Try another login method (Phone/OTP or Google) or register.";
+      } else if (err.code === "auth/wrong-password") {
+        message = "Incorrect password. Try again or use Forgot Password.";
+      } else if (err.code === "auth/invalid-credential") {
+        message = "Invalid credentials. Try another login method or reset your password.";
+      }
+      setErrors({ email: message, general: err?.message || message });
     }
   };
 
@@ -63,40 +86,36 @@ export default function LoginPage() {
     setErrors({});
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      // Redirect to profile or homepage
+      setSuccess("Logged in Successfully");
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
     } catch (err: any) {
-      setErrors({ google: "Google sign-in failed", general: err?.message || "Login failed" });
+      let message = "Google sign-in failed. Try another login method (Email/Password or Phone/OTP) or register.";
+      setErrors({ google: message, general: err?.message || message });
     }
   };
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    if (!/^\d{7,15}$/.test(phone)) {
+      setErrors({ phone: "Enter a valid phone number" });
+      return;
+    }
     try {
-      if (!/^\d{7,15}$/.test(phone)) {
-        setErrors({ phone: "Enter a valid phone number" });
-        return;
-      }
       if (!(globalThis as any).recaptchaVerifier) {
         (globalThis as any).recaptchaVerifier = new RecaptchaVerifier(
           auth,
           'recaptcha-container',
-          {
-            size: 'invisible',
-            callback: (response: any) => {},
-          }
+          { size: 'invisible', callback: () => {} }
         );
       }
       const appVerifier = (globalThis as any).recaptchaVerifier;
-      // Ensure phone number is in E.164 format
-      const fullPhone = `${countryCode}${phone.replaceAll(/\D/g, "")}`;
-      if (!/^\+\d{10,15}$/.test(fullPhone)) {
-        setErrors({ phone: "Phone number must be in international format (e.g. +919999900000)" });
-        return;
-      }
-      const confirmationResult = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
-      (globalThis as any).confirmationResult = confirmationResult;
+      const result = await signInWithPhoneNumber(auth, countryCode + phone, appVerifier);
+      (globalThis as any).confirmationResult = result;
       setOtpSent(true);
+      setSuccess("OTP sent to your phone number.");
     } catch (err: any) {
       setErrors({ phone: err?.message || "Failed to send OTP", general: err?.message || "Failed to send OTP" });
     }
@@ -117,12 +136,18 @@ export default function LoginPage() {
         return;
       }
       await confirmationResult.confirm(otp);
-      setSuccess("Login successful! Redirecting to your profile...");
+      setSuccess("Logged in Successfully");
       setTimeout(() => {
-        router.push("/profile");
+        router.push("/");
       }, 1500);
     } catch (err: any) {
-      setErrors({ otp: err?.message || "Invalid OTP", general: err?.message || "Invalid OTP" });
+      let message = "Invalid OTP. Try again or request a new OTP.";
+      if (err.code === "auth/invalid-verification-code") {
+        message = "Incorrect OTP. Please check and try again.";
+      } else if (err.code === "auth/user-not-found") {
+        message = "No account found with this phone number. Try another login method (Email/Password or Google) or register.";
+      }
+      setErrors({ otp: message, general: err?.message || message });
     }
   };
 
@@ -167,9 +192,25 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <input type="password" placeholder="Password" className="border p-3 rounded w-full" value={password} onChange={e => setPassword(e.target.value)} required />
+                  <div className="flex justify-end mt-2">
+                    <button type="button" className="text-primary underline text-sm" onClick={() => setShowReset(true)}>
+                      Forgot Password?
+                    </button>
+                  </div>
                 </div>
                 <button type="submit" className="w-full py-3 rounded bg-primary text-white font-bold text-lg hover:bg-primary/90 transition">Sign In</button>
               </form>
+              {showReset && (
+                <form className="space-y-4 mt-4" onSubmit={handlePasswordReset}>
+                  <input type="email" placeholder="Enter your email" className="border p-3 rounded w-full" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required />
+                  <button type="submit" className="w-full py-2 rounded bg-secondary text-primary font-bold">Send Password Reset Email</button>
+                  {resetSuccess && <div className="text-green-600 text-sm text-center">{resetSuccess}</div>}
+                  {resetError && <div className="text-red-500 text-sm text-center">{resetError}</div>}
+                  <div className="flex justify-end">
+                    <button type="button" className="text-gray-500 underline text-xs" onClick={() => setShowReset(false)}>Cancel</button>
+                  </div>
+                </form>
+              )}
             </>
           )}
           {tab === 1 && (

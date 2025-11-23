@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth } from "@/lib/firebaseClient";
+// import { auth } from "@/lib/firebaseClient"; // Removed duplicate
+import { auth, db } from "@/lib/firebaseClient";
+import { setDoc, doc } from "firebase/firestore";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import Link from "next/link";
@@ -84,6 +86,7 @@ export default function RegisterPage() {
         const result = await signInWithPhoneNumber(auth, sanitizePhone(countryCode, phone), appVerifier);
         (globalThis as any).confirmationResult = result;
         setOtpSent(true);
+        setSuccess("OTP sent to your phone number.");
       } catch (err: any) {
         setErrors({ phone: err?.message || "Failed to send OTP", general: err?.message || "Failed to send OTP" });
       }
@@ -100,7 +103,18 @@ export default function RegisterPage() {
     setErrors({ otp: otpError, agree: agreeError });
     if (!otpError && !agreeError) {
       try {
-        await (globalThis as any).confirmationResult.confirm(otp);
+        const confirmationResult = (globalThis as any).confirmationResult;
+        const result = await confirmationResult.confirm(otp);
+        const user = result.user;
+        // Save profile to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          name: fullName,
+          email: user.email || "",
+          phone: sanitizePhone(countryCode, phone),
+          provider: "phone",
+          createdAt: new Date().toISOString(),
+        });
         setSuccess("Registration successful! Redirecting to profile...");
         setTimeout(() => router.push("/profile"), 1800);
       } catch (err: any) {
@@ -125,7 +139,17 @@ export default function RegisterPage() {
     setErrors({ fullName: nameError, email: emailError, password: passError, confirm: confirmError, agree: agreeError });
     if (!nameError && !emailError && !passError && !confirmError && !agreeError) {
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        // Save profile to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          name: fullName,
+          email,
+          phone,
+          provider: "email",
+          createdAt: new Date().toISOString(),
+        });
         setSuccess("Registration successful! Redirecting to profile...");
         setTimeout(() => router.push("/profile"), 1800);
       } catch (err: any) {
@@ -144,7 +168,7 @@ export default function RegisterPage() {
         <div className="bg-white dark:bg-card p-8 rounded-xl shadow-lg border border-border/30 w-full md:w-1/2 mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-8 text-primary">Sign Up</h1>
           {errors.general && <div className="bg-red-100 text-red-800 rounded-xl px-4 py-3 mb-4 text-center font-bold shadow">{errors.general}</div>}
-          {success && <div className="bg-green-100 text-green-800 rounded-xl px-4 py-3 mb-4 text-center font-bold shadow">{success}</div>}
+              {success && <div className="bg-green-100 text-green-800 rounded-xl px-4 py-3 mb-4 text-center font-bold shadow">{success}</div>}
           <div className="flex gap-2 mb-8 justify-center">
             {TABS.map((t, i) => (
               <button
@@ -228,7 +252,17 @@ export default function RegisterPage() {
             <button type="button" className="w-full py-3 rounded flex items-center justify-center gap-2 border border-border bg-white hover:bg-secondary/40 transition" onClick={async () => {
               setErrors({});
               try {
-                await signInWithPopup(auth, new GoogleAuthProvider());
+                const result = await signInWithPopup(auth, new GoogleAuthProvider());
+                const user = result.user;
+                // Save profile to Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                  uid: user.uid,
+                  name: user.displayName || fullName,
+                  email: user.email,
+                  phone: user.phoneNumber || "",
+                  provider: "google",
+                  createdAt: new Date().toISOString(),
+                });
                 setSuccess("Registration successful! Redirecting to profile...");
                 setTimeout(() => router.push("/profile"), 1800);
               } catch (err: any) {
