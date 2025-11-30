@@ -10,6 +10,19 @@ const products = [
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q')?.toLowerCase() || '';
-  const results = products.filter(p => p.name.toLowerCase().includes(q));
+    if (!q || q.length < 2) {
+      return NextResponse.json([]);
+    }
+    // Search by name, category, or collection
+    const results = products.filter((product) => {
+      const name = product.name?.toLowerCase() || "";
+      const category = product.category?.toLowerCase() || "";
+      const collection = product.collection?.toLowerCase() || "";
+      return (
+        name.includes(q) ||
+        category.includes(q) ||
+        collection.includes(q)
+      );
+    });
   return NextResponse.json(results);
 }

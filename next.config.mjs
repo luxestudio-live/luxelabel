@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // output: 'export',
   trailingSlash: true,
   basePath: process.env.NODE_ENV === 'production' ? '/luxelabel' : '',
   assetPrefix: process.env.NODE_ENV === 'production' ? '/luxelabel/' : '',

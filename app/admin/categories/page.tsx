@@ -1,25 +1,58 @@
 "use client";
-import Link from "next/link";
 import AdminLayout from "../AdminLayout";
-import { useState } from "react";
-const dummyCategories = [
-  { id: 1, name: "Dresses", parent: null, count: 12, status: "active" },
-  { id: 2, name: "Bags", parent: null, count: 5, status: "active" },
-  { id: 3, name: "Shirts", parent: null, count: 8, status: "active" },
-];
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebaseClient";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 export default function CategoriesPage() {
-  const [form] = useState({
-    name: "",
-    desc: "",
-    parent: "",
-    image: "",
-    seoTitle: "",
-    seoDesc: "",
-    status: "active",
-  });
+  const [categories, setCategories] = useState<any[]>([]);
+  const [form, setForm] = useState({ name: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    async function fetchCategories() {
+      const catSnap = await getDocs(collection(db, "categories"));
+      const cats = catSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // For each category, count products
+      const prodSnap = await getDocs(collection(db, "products"));
+      const products = prodSnap.docs.map(doc => doc.data());
+      cats.forEach(cat => {
+        cat.count = products.filter(p => p.category === cat.name).length;
+      });
+      setCategories(cats);
+    }
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = async (e: any) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      if (!form.name.trim()) throw new Error("Category name required");
+      await addDoc(collection(db, "categories"), { name: form.name });
+      setSuccess("Category added!");
+      setForm({ name: "" });
+      // Refresh categories
+      const catSnap = await getDocs(collection(db, "categories"));
+      const cats = catSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const prodSnap = await getDocs(collection(db, "products"));
+      const products = prodSnap.docs.map(doc => doc.data());
+      cats.forEach(cat => {
+        cat.count = products.filter(p => p.category === cat.name).length;
+      });
+      setCategories(cats);
+    } catch (err: any) {
+      setError(err.message || "Failed to add category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AdminLayout>
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-extrabold text-primary">Categories</h1>
       </div>
@@ -29,40 +62,36 @@ export default function CategoriesPage() {
           <thead className="bg-linear-to-r from-blue-100 via-purple-100 to-pink-100">
             <tr>
               <th className="p-4 text-left">Name</th>
-              <th className="p-4 text-left">Parent</th>
               <th className="p-4 text-left">Product Count</th>
-              <th className="p-4 text-left">Status</th>
             </tr>
           </thead>
           <tbody>
-            {dummyCategories.map(c => (
+            {categories.map(c => (
               <tr key={c.id} className="border-b last:border-none hover:bg-blue-50/30">
                 <td className="p-4 font-bold text-primary">{c.name}</td>
-                <td className="p-4">{c.parent ?? "-"}</td>
                 <td className="p-4 font-semibold text-blue-700">{c.count}</td>
-                <td className="p-4"><span className={`px-3 py-1 rounded-lg text-xs font-bold ${c.status === "active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{c.status}</span></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {/* Category Form */}
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white/80 rounded-2xl shadow p-8">
+      <form className="grid grid-cols-1 gap-8 bg-white/80 rounded-2xl shadow p-8" onSubmit={handleAddCategory}>
         <div>
-          <h2 className="font-bold text-lg mb-4 text-primary">Category Info</h2>
-          <input className="mb-3 w-full px-4 py-2 rounded border" placeholder="Name" value={form.name} />
-          <input className="mb-3 w-full px-4 py-2 rounded border" placeholder="Description" value={form.desc} />
-          <input className="mb-3 w-full px-4 py-2 rounded border" placeholder="Parent" value={form.parent} />
-          <input className="mb-3 w-full px-4 py-2 rounded border" placeholder="Image/Icon" value={form.image} />
-        </div>
-        <div>
-          <h2 className="font-bold text-lg mb-4 text-primary">SEO & Status</h2>
-          <input className="mb-3 w-full px-4 py-2 rounded border" placeholder="SEO Title" value={form.seoTitle} />
-          <input className="mb-3 w-full px-4 py-2 rounded border" placeholder="SEO Description" value={form.seoDesc} />
-          <select className="mb-3 w-full px-4 py-2 rounded border" value={form.status}>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+          <h2 className="font-bold text-lg mb-4 text-primary">Create Category</h2>
+          <input
+            className="mb-3 w-full px-4 py-2 rounded border"
+            placeholder="Category Name"
+            value={form.name}
+            onChange={e => setForm({ name: e.target.value })}
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded bg-blue-600 text-white font-bold mt-2"
+            disabled={loading}
+          >{loading ? "Adding..." : "Add Category"}</button>
+          {error && <div className="mt-2 text-red-600 font-bold">{error}</div>}
+          {success && <div className="mt-2 text-green-600 font-bold">{success}</div>}
         </div>
       </form>
     </AdminLayout>

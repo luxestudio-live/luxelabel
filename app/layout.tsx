@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { CartProvider } from "./cart/CartContext";
 
 export const metadata: Metadata = {
   title: 'Luxxe Labels - High Fashion, Higher Standards',
@@ -28,14 +29,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const { UserProvider } = require("./user/UserContext");
   return (
     <html lang="en">
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        {children}
-        <Analytics />
+        <UserProvider>
+          <CartProvider>
+            {children}
+            <Analytics />
+          </CartProvider>
+        </UserProvider>
       </body>
     </html>
   )

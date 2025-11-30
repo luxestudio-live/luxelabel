@@ -2,113 +2,105 @@
 import AdminLayout from "../../AdminLayout";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebaseClient";
-import { collection, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { handleAddProduct } from "../addProductLogic";
+import { handleUpdateProduct, handleDeleteProduct, fetchProductById } from "../addProductLogic";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-export default function AddProductPage() {
+export default function EditProductPage({ params }: { params: { sku: string } }) {
+  console.log("EditProductPage mounted, params:", params); // Debug log
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const router = useRouter();
-  // Step control for two-part form
   const [step, setStep] = useState(1);
-  // Category state and fetch
-  const [categories, setCategories] = useState<string[]>([]);
+  const [form, setForm] = useState<any>(null);
+  const [removeImages, setRemoveImages] = useState<string[]>([]);
+
   useEffect(() => {
-    async function fetchCategories() {
-      const catSnap = await getDocs(collection(db, "categories"));
-      setCategories(catSnap.docs.map(doc => doc.data().name));
+    async function loadProduct() {
+      setLoading(true);
+      console.log('Fetching product for SKU:', params.sku); // Debug log before fetch
+      try {
+        const product = await fetchProductById(params.sku);
+        setForm(product);
+        console.log('Fetched product:', product); // Debug output
+      } catch (err: any) {
+        console.error('Error fetching product:', err); // Debug error log
+        setError("Failed to load product.");
+      } finally {
+        setLoading(false);
+      }
     }
-    fetchCategories();
-  }, []);
-  // Cleaned up form state
-  const [form, setForm] = useState({
-    name: "",
-    slug: "",
-    shortDesc: "",
-    fullDesc: "",
-    regularPrice: "",
-    salePrice: "",
-    sku: "",
-    stockQty: "",
-    stockStatus: "in",
-    category: "",
-    tags: "",
-    hasVariants: false,
-    variants: [],
-    mainImage: null,
-    gallery: [],
-    ogImage: null,
-    status: "draft",
-  });
+    loadProduct();
+  }, [params.sku]);
 
   // TipTap editor setup
   const editor = useEditor({
     extensions: [StarterKit],
-    content: form.fullDesc,
+    content: form?.fullDesc || "",
     onUpdate: ({ editor }) => {
-      setForm(f => ({ ...f, fullDesc: editor.getHTML() }));
+      setForm((f: any) => ({ ...f, fullDesc: editor.getHTML() }));
     },
     immediatelyRender: false,
   });
-  // Auto-generate slug from name
+
   const handleNameChange = (e: any) => {
     const name = e.target.value;
-    setForm(f => ({ ...f, name, slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") }));
+    setForm((f: any) => ({ ...f, name, slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") }));
   };
-  const handleSubmit = async (e: any) => {
+
+  const handleUpdate = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setSuccess("");
     try {
-      await handleAddProduct(form);
-      setSuccess("Product added successfully!");
-      setForm({
-        name: "",
-        slug: "",
-        shortDesc: "",
-        fullDesc: "",
-        regularPrice: "",
-        sku: "",
-        stockQty: "",
-        stockStatus: "in",
-        tags: "",
-        hasVariants: false,
-        variants: [],
-        mainImage: null,
-        gallery: [],
-        ogImage: null,
-        status: "draft",
-      });
-      // Redirect to admin products page after success
+      await handleUpdateProduct(form, removeImages);
+      setSuccess("Product updated successfully!");
       setTimeout(() => {
         router.push("/admin/products");
       }, 500);
     } catch (err: any) {
-      setError(err?.message || "Failed to add product.");
+      setError(err?.message || "Failed to update product.");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      await handleDeleteProduct(form.sku);
+      setSuccess("Product deleted successfully!");
+      setTimeout(() => {
+        router.push("/admin/products");
+      }, 500);
+    } catch (err: any) {
+      setError(err?.message || "Failed to delete product.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!form) return <AdminLayout><div>Loading...</div></AdminLayout>;
+
   return (
     <AdminLayout>
       <div className="max-w-5xl mx-auto p-8 bg-white rounded-2xl shadow-xl">
-        {/* Stepper Navigation */}
         <div className="flex gap-4 mb-8">
           <button type="button" className={`px-4 py-2 rounded-xl font-bold shadow ${step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`} onClick={() => setStep(1)}>Step 1: Product Data</button>
           <button type="button" className={`px-4 py-2 rounded-xl font-bold shadow ${step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`} onClick={() => setStep(2)}>Step 2: Images</button>
         </div>
-        {loading && <div className="text-blue-600 font-bold mb-4">Adding product, please wait...</div>}
+        {loading && <div className="text-blue-600 font-bold mb-4">Processing, please wait...</div>}
         {error && <div className="bg-red-100 text-red-800 rounded-xl px-4 py-3 text-center font-bold shadow mb-4">{error}</div>}
         {success && <div className="bg-green-100 text-green-800 rounded-xl px-4 py-3 text-center font-bold shadow mb-4">{success}</div>}
         <div className="flex gap-4 items-center mb-6">
-          <h1 className="text-3xl font-extrabold text-primary">Add Product</h1>
+          <h1 className="text-3xl font-extrabold text-primary">Edit Product</h1>
           <Link href="/admin/products" className="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-bold shadow hover:bg-gray-300 transition">← Back to Products</Link>
+          <button type="button" className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold shadow hover:bg-red-700 transition" onClick={handleDelete}>Delete Product</button>
         </div>
         {/* Step 1: Product Data */}
         {step === 1 && (
@@ -121,28 +113,27 @@ export default function AddProductPage() {
               </div>
               <div>
                 <label className="font-semibold mb-1 block">Slug/URL Handle</label>
-                <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} />
+                <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.slug} onChange={e => setForm((f: any) => ({ ...f, slug: e.target.value }))} />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-6 mt-6">
               <div>
                 <label className="font-semibold mb-1 block">Short Description</label>
-                <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.shortDesc} onChange={e => setForm(f => ({ ...f, shortDesc: e.target.value }))} />
+                <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.shortDesc} onChange={e => setForm((f: any) => ({ ...f, shortDesc: e.target.value }))} />
               </div>
               <div>
                 <label className="font-semibold mb-1 block">Category</label>
-                <select className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                <select className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.category} onChange={e => setForm((f: any) => ({ ...f, category: e.target.value }))}>
                   <option value="">Select Category</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
+                  <option value="Dresses">Dresses</option>
+                  <option value="Accessories">Accessories</option>
+                  <option value="Jewelry">Jewelry</option>
                 </select>
               </div>
             </div>
             <div className="mt-6">
               <label className="font-semibold mb-1 block">Full Description (Rich Text)</label>
               <div className="bg-white rounded-xl border shadow focus-within:ring-2 focus-within:ring-blue-300 p-4 min-h-80 overflow-hidden">
-                {/* TipTap Menu Bar */}
                 {editor && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     <button type="button" className="px-2 py-1 rounded border text-sm" onClick={() => editor.chain().focus().toggleBold().run()} style={{ fontWeight: editor.isActive('bold') ? 'bold' : 'normal' }}>B</button>
@@ -167,35 +158,35 @@ export default function AddProductPage() {
             <div className="grid md:grid-cols-4 gap-6 mt-6">
               <div>
                 <label className="font-semibold mb-1 block">Regular Price (INR)</label>
-                <input type="number" className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.regularPrice} onChange={e => setForm(f => ({ ...f, regularPrice: e.target.value }))} />
+                <input type="number" className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.regularPrice} onChange={e => setForm((f: any) => ({ ...f, regularPrice: e.target.value }))} />
               </div>
               <div>
                 <label className="font-semibold mb-1 block">Sale Price (INR)</label>
-                <input type="number" className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.salePrice || ""} onChange={e => setForm(f => ({ ...f, salePrice: e.target.value }))} />
+                <input type="number" className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.salePrice || ""} onChange={e => setForm((f: any) => ({ ...f, salePrice: e.target.value }))} />
               </div>
               <div>
                 <label className="font-semibold mb-1 block">SKU</label>
-                <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} />
+                <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.sku} onChange={e => setForm((f: any) => ({ ...f, sku: e.target.value }))} />
               </div>
               <div>
                 <label className="font-semibold mb-1 block">Stock Quantity</label>
-                <input type="number" className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.stockQty} onChange={e => setForm(f => ({ ...f, stockQty: e.target.value }))} />
+                <input type="number" className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.stockQty} onChange={e => setForm((f: any) => ({ ...f, stockQty: e.target.value }))} />
               </div>
             </div>
             <div className="mt-6">
               <label className="font-semibold mb-1 block">Tags</label>
-              <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} />
+              <input className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.tags} onChange={e => setForm((f: any) => ({ ...f, tags: e.target.value }))} />
             </div>
             <div className="mt-6">
               <label className="font-semibold mb-1 block">Active Status</label>
-              <select className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.active ? "true" : "false"} onChange={e => setForm(f => ({ ...f, active: e.target.value === "true" }))}>
+              <select className="px-4 py-3 rounded-xl border focus:ring-2 focus:ring-blue-300 w-full transition" value={form.active ? "true" : "false"} onChange={e => setForm((f: any) => ({ ...f, active: e.target.value === "true" }))}>
                 <option value="true">Active (Visible)</option>
                 <option value="false">Inactive (Hidden)</option>
               </select>
             </div>
             <div className="mt-6">
               <label className="font-semibold mb-1 block">Has Variants?</label>
-              <input type="checkbox" checked={form.hasVariants} onChange={e => setForm(f => ({ ...f, hasVariants: e.target.checked }))} />
+              <input type="checkbox" checked={form.hasVariants} onChange={e => setForm((f: any) => ({ ...f, hasVariants: e.target.checked }))} />
             </div>
             {form.hasVariants && (
               <div className="mt-6 border rounded-xl p-4 bg-blue-50">
@@ -207,10 +198,9 @@ export default function AddProductPage() {
                       <select className="px-2 py-2 rounded border w-full" value={variant.type || "color"} onChange={e => {
                         const variants = [...form.variants];
                         variants[idx].type = e.target.value;
-                        // Clear the other field when switching type
                         if (e.target.value === "color") variants[idx].size = "";
                         if (e.target.value === "size") variants[idx].color = "";
-                        setForm(f => ({ ...f, variants }));
+                        setForm((f: any) => ({ ...f, variants }));
                       }}>
                         <option value="color">Color</option>
                         <option value="size">Size</option>
@@ -222,7 +212,7 @@ export default function AddProductPage() {
                         <input className="px-2 py-2 rounded border w-full" value={variant.colorName || ""} onChange={e => {
                           const variants = [...form.variants];
                           variants[idx].colorName = e.target.value;
-                          setForm(f => ({ ...f, variants }));
+                          setForm((f: any) => ({ ...f, variants }));
                         }} />
                       </div>
                     )}
@@ -233,7 +223,7 @@ export default function AddProductPage() {
                           <input className="px-2 py-2 rounded border w-full" value={variant.sizeName || ""} onChange={e => {
                             const variants = [...form.variants];
                             variants[idx].sizeName = e.target.value;
-                            setForm(f => ({ ...f, variants }));
+                            setForm((f: any) => ({ ...f, variants }));
                           }} />
                         </div>
                         <div>
@@ -241,7 +231,7 @@ export default function AddProductPage() {
                           <input className="px-2 py-2 rounded border w-full" value={variant.width || ""} onChange={e => {
                             const variants = [...form.variants];
                             variants[idx].width = e.target.value;
-                            setForm(f => ({ ...f, variants }));
+                            setForm((f: any) => ({ ...f, variants }));
                           }} />
                         </div>
                         <div>
@@ -249,7 +239,7 @@ export default function AddProductPage() {
                           <input className="px-2 py-2 rounded border w-full" value={variant.bust || ""} onChange={e => {
                             const variants = [...form.variants];
                             variants[idx].bust = e.target.value;
-                            setForm(f => ({ ...f, variants }));
+                            setForm((f: any) => ({ ...f, variants }));
                           }} />
                         </div>
                         <div>
@@ -257,7 +247,7 @@ export default function AddProductPage() {
                           <input className="px-2 py-2 rounded border w-full" value={variant.sleeveLength || ""} onChange={e => {
                             const variants = [...form.variants];
                             variants[idx].sleeveLength = e.target.value;
-                            setForm(f => ({ ...f, variants }));
+                            setForm((f: any) => ({ ...f, variants }));
                           }} />
                         </div>
                       </>
@@ -267,7 +257,7 @@ export default function AddProductPage() {
                       <input type="number" className="px-2 py-2 rounded border w-full" value={variant.price || ""} onChange={e => {
                         const variants = [...form.variants];
                         variants[idx].price = e.target.value;
-                        setForm(f => ({ ...f, variants }));
+                        setForm((f: any) => ({ ...f, variants }));
                       }} />
                     </div>
                     <div>
@@ -275,51 +265,69 @@ export default function AddProductPage() {
                       <input type="number" className="px-2 py-2 rounded border w-full" value={variant.stockQty || ""} onChange={e => {
                         const variants = [...form.variants];
                         variants[idx].stockQty = e.target.value;
-                        setForm(f => ({ ...f, variants }));
+                        setForm((f: any) => ({ ...f, variants }));
                       }} />
                     </div>
                     <div>
                       <button type="button" className="px-3 py-2 rounded bg-red-100 text-red-700 font-bold" onClick={() => {
                         const variants = [...form.variants];
                         variants.splice(idx, 1);
-                        setForm(f => ({ ...f, variants }));
+                        setForm((f: any) => ({ ...f, variants }));
                       }}>Remove</button>
                     </div>
                   </div>
                 ))}
-                <button type="button" className="px-4 py-2 rounded bg-blue-600 text-white font-bold mt-2" onClick={() => setForm(f => ({ ...f, variants: [...(f.variants || []), { type: "color", color: "", size: "", price: "", stockQty: "" }] }))}>Add Variant</button>
+                <button type="button" className="px-4 py-2 rounded bg-blue-600 text-white font-bold mt-2" onClick={() => setForm((f: any) => ({ ...f, variants: [...(f.variants || []), { type: "color", color: "", size: "", price: "", stockQty: "" }] }))}>Add Variant</button>
               </div>
             )}
-            {/* Next button */}
             <div className="mt-8 flex justify-end">
               <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition">Next: Images</button>
             </div>
           </form>
         )}
-        {/* Step 2: Image Upload */}
+        {/* Step 2: Image Edit */}
         {step === 2 && (
-          <form autoComplete="off" onSubmit={handleSubmit}>
+          <form autoComplete="off" onSubmit={handleUpdate}>
             <h2 className="text-xl font-bold text-primary mb-4">Product Images</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="font-semibold mb-1 block">Main Image</label>
-                <input type="file" accept="image/*" onChange={e => setForm(f => ({ ...f, mainImage: e.target.files?.[0] }))} />
-                {form.mainImage && <div className="mt-2 text-sm text-gray-600">Selected: {form.mainImage.name}</div>}
+                {form.mainImage && (
+                  <div className="mb-2">
+                    <img src={form.mainImage.url || form.mainImage} alt="Main" className="rounded-xl w-32 h-32 object-cover" />
+                    <button type="button" className="ml-2 px-2 py-1 rounded bg-red-100 text-red-700 font-bold" onClick={() => setRemoveImages(imgs => [...imgs, form.mainImage.url || form.mainImage])}>Remove</button>
+                  </div>
+                )}
+                <input type="file" accept="image/*" onChange={e => setForm((f: any) => ({ ...f, mainImage: e.target.files?.[0] }))} />
               </div>
               <div>
                 <label className="font-semibold mb-1 block">Gallery Images</label>
-                <input type="file" accept="image/*" multiple onChange={e => setForm(f => ({ ...f, gallery: Array.from(e.target.files || []) }))} />
-                {form.gallery && form.gallery.length > 0 && <div className="mt-2 text-sm text-gray-600">{form.gallery.length} images selected</div>}
+                {form.gallery && form.gallery.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {form.gallery.map((img: any, idx: number) => (
+                      <div key={idx} className="relative">
+                        <img src={img.url || img} alt={`Gallery ${idx}`} className="rounded-xl w-24 h-24 object-cover" />
+                        <button type="button" className="absolute top-1 right-1 px-2 py-1 rounded bg-red-100 text-red-700 font-bold" onClick={() => setRemoveImages(imgs => [...imgs, img.url || img])}>Remove</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input type="file" accept="image/*" multiple onChange={e => setForm((f: any) => ({ ...f, gallery: Array.from(e.target.files || []) }))} />
               </div>
             </div>
             <div className="mt-6">
               <label className="font-semibold mb-1 block">OG Image</label>
-              <input type="file" accept="image/*" onChange={e => setForm(f => ({ ...f, ogImage: e.target.files?.[0] }))} />
-              {form.ogImage && <div className="mt-2 text-sm text-gray-600">Selected: {form.ogImage.name}</div>}
+              {form.ogImage && (
+                <div className="mb-2">
+                  <img src={form.ogImage.url || form.ogImage} alt="OG" className="rounded-xl w-32 h-32 object-cover" />
+                  <button type="button" className="ml-2 px-2 py-1 rounded bg-red-100 text-red-700 font-bold" onClick={() => setRemoveImages(imgs => [...imgs, form.ogImage.url || form.ogImage])}>Remove</button>
+                </div>
+              )}
+              <input type="file" accept="image/*" onChange={e => setForm((f: any) => ({ ...f, ogImage: e.target.files?.[0] }))} />
             </div>
             <div className="mt-8 flex justify-between">
               <button type="button" className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold shadow hover:bg-gray-300 transition" onClick={() => setStep(1)}>Back</button>
-              <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition">Submit Product</button>
+              <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition">Update Product</button>
             </div>
           </form>
         )}

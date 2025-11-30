@@ -1,7 +1,7 @@
 import { Header } from "@/components/header"
 import { CatalogHero } from "@/components/catalog-hero"
 import { ProductFilters } from "@/components/product-filters"
-import { ProductGrid } from "@/components/product-grid"
+import { ProductGridFirestore } from "@/components/ProductGridFirestore"
 import { Footer } from "@/components/footer"
 
 export default function CatalogPage() {
@@ -11,7 +11,7 @@ export default function CatalogPage() {
       <CatalogHero />
       <div className="container mx-auto px-4 py-8">
         <ProductFilters />
-        <ProductGrid />
+        <ProductGridFirestore />
       </div>
       <Footer />
     </div>

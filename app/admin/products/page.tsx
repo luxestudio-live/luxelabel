@@ -1,34 +1,54 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebaseClient";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import AdminLayout from "../AdminLayout";
 import Link from "next/link";
-// ...existing code...
-const dummyProducts = [
-  {
-    name: "Luxury Silk Dress",
-    sku: "LSK-001",
-    price: 4999,
-    stock: 12,
-    category: "Dresses",
-  },
-  // ...existing code...
-];
-// ...existing code...
+
 export default function ProductsPage() {
   const [filter, setFilter] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteIdx, setDeleteIdx] = useState<number|null>(null);
-  const filteredProducts = filter ? dummyProducts.filter(p => p.category === filter) : dummyProducts;
+  const [products, setProducts] = useState<any[]>([]);
+  const [status, setStatus] = useState("");
+  useEffect(() => {
+    async function fetchProducts() {
+      const snapshot = await getDocs(collection(db, "products"));
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(items);
+    }
+    fetchProducts();
+  }, []);
+  const filteredProducts = filter ? products.filter(p => p.category === filter) : products;
   const handleDelete = (idx: number) => {
     setDeleteIdx(idx);
     setShowConfirm(true);
   };
-  const confirmDelete = () => {
-    // Dummy delete logic
-    setShowConfirm(false);
-    setDeleteIdx(null);
-    // You can add actual delete logic here
+  const confirmDelete = async () => {
+    if (deleteIdx === null) return;
+    setStatus("Deleting product...");
+    const sku = filteredProducts[deleteIdx].sku;
+    try {
+      // Find Firestore document ID by SKU
+      const productsRef = collection(db, "products");
+      const q = query(productsRef, where("sku", "==", sku));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) throw new Error("Product not found");
+      const docId = querySnapshot.docs[0].id;
+      // Delete document
+      const { deleteDoc, doc } = await import("firebase/firestore");
+      await deleteDoc(doc(db, "products", docId));
+      setStatus("Product deleted successfully!");
+      // Remove from local state
+      setProducts(products => products.filter(p => p.sku !== sku));
+    } catch (err: any) {
+      setStatus(err?.message || "Failed to delete product.");
+    } finally {
+      setShowConfirm(false);
+      setDeleteIdx(null);
+      setTimeout(() => setStatus(""), 2000);
+    }
   };
   return (
     <AdminLayout>
@@ -44,6 +64,9 @@ export default function ProductsPage() {
           <option value="Jewelry">Jewelry</option>
         </select>
       </div>
+      {status && (
+        <div className="mb-4 text-center font-bold text-blue-600">{status}</div>
+      )}
       <div className="overflow-x-auto rounded-2xl shadow bg-white/90">
         <table className="min-w-full text-sm">
           <thead className="bg-linear-to-r from-blue-100 via-purple-100 to-pink-100">
@@ -51,6 +74,7 @@ export default function ProductsPage() {
               <th className="p-4 text-left">Name</th>
               <th className="p-4 text-left">SKU</th>
               <th className="p-4 text-left">Price</th>
+              <th className="p-4 text-left">Sale Price</th>
               <th className="p-4 text-left">Stock</th>
               <th className="p-4 text-left">Category</th>
               <th className="p-4 text-left">Actions</th>
@@ -61,8 +85,9 @@ export default function ProductsPage() {
               <tr key={p.sku} className="border-b last:border-none hover:bg-blue-50/30">
                 <td className="p-4 font-bold text-primary">{p.name}</td>
                 <td className="p-4 font-mono text-xs">{p.sku}</td>
-                <td className="p-4">₹{p.price}</td>
-                <td className="p-4">{p.stock}</td>
+                <td className="p-4">₹{p.regularPrice}</td>
+                <td className="p-4">₹{p.salePrice || '-'}</td>
+                <td className="p-4">{p.stockQty}</td>
                 <td className="p-4">{p.category}</td>
                 <td className="p-4 flex gap-2">
                   <Link href={`/admin/products/edit/${p.sku}`} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">Edit</Link>

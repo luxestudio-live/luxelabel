@@ -2,9 +2,12 @@
 
 
 
+
 import dynamic from "next/dynamic";
 import AdminLayout from "../AdminLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebaseClient";
+import { collection, getDocs } from "firebase/firestore";
 
 const KPI_CONFIG = [
   { label: "Total Sales (INR)", icon: "💰", color: "bg-linear-to-r from-green-400 to-blue-500" },
@@ -16,17 +19,6 @@ const KPI_CONFIG = [
   { label: "Total Customers", icon: "👤", color: "bg-linear-to-r from-indigo-400 to-blue-500" },
   { label: "Top Product", icon: "⭐", color: "bg-linear-to-r from-yellow-400 to-orange-500" },
 ];
-
-const KPI_DATA = {
-  today: ["₹24,000", "₹24,000", 32, 2, 30, 1, 10, "Silk Dress"],
-  week: ["₹1,20,000", "₹24,000", 120, 10, 110, 2, 50, "Silk Dress"],
-  month: ["₹4,80,000", "₹24,000", 480, 20, 460, 5, 200, "Silk Dress"],
-  lastMonth: ["₹3,90,000", "₹20,000", 390, 15, 375, 3, 180, "Silk Dress"],
-  last3Months: ["₹12,40,000", "₹24,000", 1204, 32, 1100, 12, 542, "Silk Dress"],
-  quarter: ["₹8,00,000", "₹24,000", 800, 25, 775, 8, 400, "Silk Dress"],
-  year: ["₹18,00,000", "₹24,000", 1800, 40, 1750, 20, 900, "Silk Dress"],
-  custom: ["₹12,40,000", "₹24,000", 1204, 32, 1100, 12, 542, "Silk Dress"],
-};
 
 const FILTERS = [
   { key: "today", label: "Today" },
@@ -46,35 +38,75 @@ const quickLinks = [
   { label: "Settings", href: "/admin/settings" },
 ];
 
-const latestOrders = [
-  { id: "ORD1001", customer: "Jane Doe", total: "₹4,999", status: "Pending" },
-  { id: "ORD1002", customer: "Rahul Singh", total: "₹7,499", status: "Completed" },
-  { id: "ORD1003", customer: "Amit Patel", total: "₹2,499", status: "Refund" },
-  { id: "ORD1004", customer: "Priya Sharma", total: "₹1,999", status: "Pending" },
-];
-
-const lowStock = [
-  { product: "Luxury Leather Bag", stock: 2 },
-  { product: "Premium Silk Dress", stock: 5 },
-];
-
-const recentSignups = [
-  { name: "Rohit Verma", date: "2025-11-21" },
-  { name: "Sneha Kapoor", date: "2025-11-20" },
-];
-
-const pendingRefunds = [
-  { id: "ORD1003", customer: "Amit Patel", amount: "₹2,499" },
-];
-
 const SalesChart = dynamic(() => import("./DashboardCharts").then(m => m.SalesChart), { ssr: false });
 const OrdersChart = dynamic(() => import("./DashboardCharts").then(m => m.OrdersChart), { ssr: false });
 const TrafficChart = dynamic(() => import("./DashboardCharts").then(m => m.TrafficChart), { ssr: false });
 
 export default function AdminDashboard() {
-  const [filter, setFilter] = useState("today");
-  // For demo, use static data. In real app, fetch data based on filter.
-  const KPIS = KPI_CONFIG.map((kpi, idx) => ({ ...kpi, value: KPI_DATA[filter as keyof typeof KPI_DATA][idx] }));
+  // Removed unused filter state
+  const [products, setProducts] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  // Removed unused loading state
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const prodSnap = await getDocs(collection(db, "products"));
+        setProducts(prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const custSnap = await getDocs(collection(db, "users"));
+        setCustomers(custSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (e) {
+        // Optionally handle error
+      }
+    }
+    fetchData();
+  }, []);
+
+  // KPIs
+  const totalCustomers = customers.length;
+  const topProduct = products.length > 0
+    ? products.reduce((a, b) => (a.totalOrders || 0) > (b.totalOrders || 0) ? a : b, products[0]).name
+    : "-";
+  // Dummy for sales/orders, real for products/customers
+  const KPIS = [
+    "₹24,000", // Total Sales (dummy)
+    "₹24,000", // Today's Sales (dummy)
+    32,         // Orders (dummy)
+    2,          // Pending Orders (dummy)
+    30,         // Completed Orders (dummy)
+    1,          // Refunds/Returns (dummy)
+    totalCustomers, // Total Customers (live)
+    topProduct      // Top Product (live)
+  ].map((value, idx) => ({ ...KPI_CONFIG[idx], value }));
+
+  // Low stock products (live)
+  const lowStock = Array.isArray(products)
+    ? products.filter(p => p.stockQty > 0 && p.stockQty < 20).map(p => ({ product: p.name, stock: p.stockQty }))
+    : [];
+
+  // Recent signups (last 3, live)
+  const sortedSignups = Array.isArray(customers)
+    ? [...customers].sort((a, b) => {
+        // Sort by createdAt descending if available
+        if (a.createdAt && b.createdAt) {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        return 0;
+      })
+    : [];
+  const recentSignups = sortedSignups.slice(0, 3).map(u => ({ name: u.name || u.email || "User", date: u.createdAt || "-" }));
+
+  // Other widgets remain dummy
+  const latestOrders = [
+    { id: "ORD1001", customer: "Jane Doe", total: "₹4,999", status: "Pending" },
+    { id: "ORD1002", customer: "Rahul Singh", total: "₹7,499", status: "Completed" },
+    { id: "ORD1003", customer: "Amit Patel", total: "₹2,499", status: "Refund" },
+    { id: "ORD1004", customer: "Priya Sharma", total: "₹1,999", status: "Pending" },
+  ];
+  const pendingRefunds = [
+    { id: "ORD1003", customer: "Amit Patel", amount: "₹2,499" },
+  ];
+
   return (
     <AdminLayout>
       {/* Header removed, now only using AdminLayout's header */}
@@ -138,7 +170,7 @@ export default function AdminDashboard() {
         {/* Widgets - New UI */}
         <section className="w-full py-8 px-2 rounded-3xl shadow-2xl mt-8">
           <div className="flex flex-col gap-10">
-            {/* Latest Orders Carousel */}
+            {/* Latest Orders Carousel (dummy) */}
             <div>
               <h3 className="font-extrabold text-3xl mb-4 text-blue-700 drop-shadow flex items-center gap-2">Latest Orders <span className="text-lg">📝</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
@@ -162,7 +194,7 @@ export default function AdminDashboard() {
                 })}
               </div>
             </div>
-            {/* Low Stock Carousel */}
+            {/* Low Stock Carousel (live) */}
             <div>
               <h3 className="font-extrabold text-3xl mb-4 text-red-700 drop-shadow flex items-center gap-2">Low Stock Alerts <span className="text-lg">⚠️</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
@@ -174,7 +206,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
-            {/* Pending Refunds Carousel */}
+            {/* Pending Refunds Carousel (dummy) */}
             <div>
               <h3 className="font-extrabold text-3xl mb-4 text-yellow-700 drop-shadow flex items-center gap-2">Pending Refunds/Returns <span className="text-lg">💸</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
@@ -189,7 +221,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
-            {/* Recent Signups Carousel */}
+            {/* Recent Signups Carousel (live) */}
             <div>
               <h3 className="font-extrabold text-3xl mb-4 text-purple-700 drop-shadow flex items-center gap-2">Recent Signups <span className="text-lg">🆕</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
@@ -207,3 +239,4 @@ export default function AdminDashboard() {
     </AdminLayout>
   );
 }
+

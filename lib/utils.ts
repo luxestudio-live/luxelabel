@@ -6,14 +6,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getImageUrl(path: string) {
+  // If path is a full URL (http/https), return as is
+  if (/^https?:\/\//.test(path)) {
+    return path;
+  }
   // Remove leading slash if present
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path
-  
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   // In production (GitHub Pages), prepend the base path
   if (process.env.NODE_ENV === 'production') {
-    return `/luxelabel/${cleanPath}`
+    return `/luxelabel/${cleanPath}`;
   }
-  
   // In development, use the path as is
-  return `/${cleanPath}`
+  return `/${cleanPath}`;
 }

@@ -40,9 +40,70 @@ export default function ProfilePage() {
       // Stub for handleVerifyOtp to fix missing function error
       const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Implement OTP verification logic
-        setSuccess("OTP verified (stub)");
-        setShowCompleteForm(false);
+        setError("");
+        setSuccess("");
+        try {
+          // Get verificationId from globalThis
+          const verificationId = (globalThis as any).verificationId;
+          if (!verificationId || !otp) {
+            setError("Please enter the OTP sent to your phone.");
+            return;
+          }
+          // Import Firebase Auth methods
+          const { PhoneAuthProvider, linkWithCredential } = await import("firebase/auth");
+          const credential = PhoneAuthProvider.credential(verificationId, otp);
+          // Link phone credential to current user
+          if (auth.currentUser) {
+            let linkedUser = null;
+            try {
+              linkedUser = await linkWithCredential(auth.currentUser, credential);
+            } catch (err: any) {
+              if (err.code === "auth/provider-already-linked") {
+                // Already linked, just update Firestore
+                await setDoc(doc(db, "users", auth.currentUser.uid), {
+                  uid: auth.currentUser.uid,
+                  name: formData.name,
+                  phone: sanitizePhone(countryCode, phone),
+                  email: formData.email
+                });
+                setUser({
+                  uid: auth.currentUser.uid,
+                  name: formData.name,
+                  phone: sanitizePhone(countryCode, phone),
+                  email: formData.email
+                });
+                setShowCompleteForm(false);
+                setSuccess("Phone already linked. Profile updated. Logged in Successfully");
+                if (typeof window !== "undefined") {
+                  window.location.replace("/");
+                }
+                return;
+              } else {
+                throw err;
+              }
+            }
+            // Save to Firestore
+            await setDoc(doc(db, "users", auth.currentUser.uid), {
+              uid: auth.currentUser.uid,
+              name: formData.name,
+              phone: sanitizePhone(countryCode, phone),
+              email: formData.email
+            });
+            setUser({
+              uid: linkedUser.user.uid,
+              name: formData.name,
+              phone: sanitizePhone(countryCode, phone),
+              email: formData.email
+            });
+            setShowCompleteForm(false);
+            setSuccess("Phone verified and linked. Profile updated. Logged in Successfully");
+            if (typeof window !== "undefined") {
+              window.location.replace("/");
+            }
+          }
+        } catch (err: any) {
+          setError(err?.message || "Failed to verify OTP or link phone.");
+        }
       };
     const sanitizePhone = (code: string, number: string): string => {
       return code + number.replaceAll(/\D/g, "");
@@ -111,7 +172,9 @@ export default function ProfilePage() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone) {
+    const fullPhone = sanitizePhone(countryCode, phone);
+    // Accept if at least 10 digits after country code
+    if (!fullPhone || fullPhone.length < countryCode.length + 10) {
       setError("Enter valid phone number");
       return;
     }
@@ -134,7 +197,7 @@ export default function ProfilePage() {
       // Use PhoneAuthProvider to get credential for linking
       const { PhoneAuthProvider } = await import("firebase/auth");
       const phoneProvider = new PhoneAuthProvider(auth);
-      const verificationId = await phoneProvider.verifyPhoneNumber(sanitizePhone(countryCode, phone), appVerifier);
+      const verificationId = await phoneProvider.verifyPhoneNumber(fullPhone, appVerifier);
       (globalThis as any).verificationId = verificationId;
       setOtpSent(true);
       setError("");
@@ -188,8 +251,7 @@ export default function ProfilePage() {
                         });
                         setShowCompleteForm(false);
                         setError("");
-                        setSuccess("Email already linked. Profile updated.");
-                        setSuccess("Logged in Successfully");
+                        setSuccess("Email already linked. Profile updated. Logged in Successfully");
                         if (typeof window !== "undefined") {
                           window.location.replace("/");
                         }
@@ -248,9 +310,9 @@ export default function ProfilePage() {
                     <option key={c.code} value={c.code}>{c.name} {c.code}</option>
                   ))}
                 </select>
-                <input type="tel" className="border p-3 rounded w-2/3" placeholder="Phone number" value={formData.phone} onChange={e => setFormData(f => ({ ...f, phone: e.target.value }))} required disabled={user?.hasPhone && !user?.hasPassword} />
+                <input type="tel" className="border p-3 rounded w-2/3" placeholder="Phone number" value={formData.phone} onChange={e => { setFormData(f => ({ ...f, phone: e.target.value })); setPhone(e.target.value); }} required disabled={user?.hasPhone && !user?.hasPassword} />
               </div>
-              {/* If phone provider, ask for email and password fields */}
+              {/* If phone provider and NOT email/password, ask for email and password fields */}
               {user?.hasPhone && !user?.hasPassword && (
                 <>
                   <input type="email" className="border p-3 rounded w-full" placeholder="Email" value={formData.email} onChange={e => setFormData(f => ({ ...f, email: e.target.value }))} />
@@ -262,10 +324,7 @@ export default function ProfilePage() {
               {otpSent && !(user?.hasPhone && !user?.hasPassword) && (
                 <input type="text" className="border p-3 rounded w-full" placeholder="Enter OTP" value={otp} onChange={e => setOtp(e.target.value)} />
               )}
-              {/* Show password field only for email/password users (if needed) */}
-              {user?.hasPassword && (
-                <input type="password" className="border p-3 rounded w-full" placeholder="Password" />
-              )}
+              {/* Hide password field for email/password users in profile completion */}
               <div id="recaptcha-container" style={{ display: 'none' }}></div>
               <button type="submit" className="w-full py-3 rounded bg-primary text-white font-bold text-lg hover:bg-primary/90 transition">
                 {user?.provider === "phone" ? "Save" : (otpSent ? "Verify & Save" : "Send OTP & Save")}
@@ -296,16 +355,24 @@ export default function ProfilePage() {
                 {editPersonal ? (
                   <form className="space-y-2" onSubmit={async e => {
                     e.preventDefault();
+                    setError("");
+                    setSuccess("");
+                    if (!personalEditData.name || !personalEditData.phone) {
+                      setError("Name and phone are required.");
+                      return;
+                    }
                     try {
                       if (auth.currentUser) {
                         await setDoc(doc(db, "users", auth.currentUser.uid), {
-                          ...user,
+                          uid: auth.currentUser.uid,
                           name: personalEditData.name,
                           phone: personalEditData.phone,
-                          dob: personalEditData.dob
+                          dob: personalEditData.dob || "",
+                          email: user.email || ""
                         });
                         setUser((u: any) => ({ ...u, name: personalEditData.name, phone: personalEditData.phone, dob: personalEditData.dob }));
                         setEditPersonal(false);
+                        setSuccess("Profile updated successfully.");
                       }
                     } catch (err: any) {
                       setError(err?.message || "Failed to update profile.");
@@ -325,6 +392,14 @@ export default function ProfilePage() {
                     <div><span className="font-semibold">Date of Birth:</span> {user.dob || "-"}</div>
                   </div>
                 )}
+              </div>
+              {/* Orders Card */}
+              <div className="bg-white dark:bg-card p-6 rounded-xl shadow-lg border border-border/30">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="font-semibold text-lg">Orders</h2>
+                  <a href="/account-dashboard" className="text-primary underline font-medium">View all orders</a>
+                </div>
+                <div className="text-muted-foreground">View and manage your orders, track shipments, and more.</div>
               </div>
               {/* Security Card */}
               <div className="bg-white dark:bg-card p-6 rounded-xl shadow-lg border border-border/30">

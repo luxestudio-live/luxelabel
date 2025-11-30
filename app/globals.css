@@ -46,6 +46,28 @@
   --gradient-gold-accent: linear-gradient(135deg, oklch(0.85 0.08 85) 0%, oklch(0.75 0.12 75) 100%);
 }
 
+/* Robust marquee styles for OffersBanner */
+.offers-marquee-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+.animate-marquee {
+  display: flex;
+  align-items: center;
+  /* The inner container contains two identical blocks side-by-side */
+  animation: marquee-slide 16s linear infinite;
+}
+.animate-marquee > div {
+  display: flex;
+  gap: 2rem;
+}
+
+@keyframes marquee-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

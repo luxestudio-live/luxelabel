@@ -3,55 +3,39 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { useState } from "react";
 import Link from "next/link";
+import { useCart } from "./CartContext";
 
-const initialCart = [
-  {
-    id: 1,
-    name: "Premium Silk Dress",
-    variant: "Red, M",
-    price: 249.99,
-    image: "/dummy-dress.jpg",
-    quantity: 1,
-  },
-  {
-    id: 2,
-    name: "Luxury Leather Bag",
-    variant: "Black",
-    price: 399.99,
-    image: "/dummy-bag.jpg",
-    quantity: 2,
-  },
-];
 
 export default function CartPage() {
-  const [cart, setCart] = useState(initialCart);
-  const [coupon, setCoupon] = useState("");
-  const [discount, setDiscount] = useState(0);
+  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
 
   const handleQuantity = (id: number, delta: number) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-          : item
-      )
-    );
+    // Find all items with this id and update only the correct variant
+    const items = cart.filter(i => i.id === id);
+    if (items.length === 1) {
+      updateQuantity(id, items[0].variant, delta);
+    } else if (items.length > 1) {
+      // If multiple, update only the one with matching variant in the row
+      // This function should be called with both id and variant
+      // So update the handler in the row below
+    }
   };
 
   const handleRemove = (id: number) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    const items = cart.filter(i => i.id === id);
+    if (items.length === 1) {
+      removeFromCart(id, items[0].variant);
+    } else if (items.length > 1) {
+      // If multiple, remove only the one with matching variant in the row
+      // This function should be called with both id and variant
+    }
   };
 
-  const handleApplyCoupon = () => {
-    if (coupon === "SAVE10") setDiscount(0.1);
-    else setDiscount(0);
-  };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const estimatedTax = subtotal * 0.08;
   const shipping = subtotal > 500 ? 0 : 20;
-  const discountAmount = subtotal * discount;
-  const total = subtotal + estimatedTax + shipping - discountAmount;
+  const total = subtotal + estimatedTax + shipping;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -76,13 +60,24 @@ export default function CartPage() {
                 </thead>
                 <tbody>
                   {cart.map((item) => (
-                    <tr key={item.id} className="border-b">
+                    <tr key={item.id + '-' + item.variant} className="border-b">
                       <td className="py-4 flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                          {/* Replace with actual image */}
-                          <span className="text-xs text-muted-foreground">Image</span>
-                        </div>
-                        <span className="font-semibold">{item.name}</span>
+                        <Link href={`/product/${item.id}`} className="block">
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Image</span>
+                            )}
+                          </div>
+                        </Link>
+                        <Link href={`/product/${item.id}`} className="font-semibold hover:underline">
+                          {item.name}
+                        </Link>
                       </td>
                       <td className="py-4">{item.variant}</td>
                       <td className="py-4">₹{item.price.toLocaleString()}</td>
@@ -90,7 +85,7 @@ export default function CartPage() {
                         <div className="flex items-center gap-2">
                           <button
                             className="px-2 py-1 rounded bg-secondary text-primary"
-                            onClick={() => handleQuantity(item.id, -1)}
+                            onClick={() => updateQuantity(item.id, item.variant, -1)}
                             aria-label="Decrease quantity"
                           >
                             -
@@ -98,7 +93,7 @@ export default function CartPage() {
                           <span className="px-3 font-medium">{item.quantity}</span>
                           <button
                             className="px-2 py-1 rounded bg-secondary text-primary"
-                            onClick={() => handleQuantity(item.id, 1)}
+                            onClick={() => updateQuantity(item.id, item.variant, 1)}
                             aria-label="Increase quantity"
                           >
                             +
@@ -109,7 +104,7 @@ export default function CartPage() {
                       <td className="py-4">
                         <button
                           className="px-3 py-1 rounded bg-destructive text-white"
-                          onClick={() => handleRemove(item.id)}
+                          onClick={() => removeFromCart(item.id, item.variant)}
                           aria-label="Remove item"
                         >
                           Remove
@@ -121,24 +116,7 @@ export default function CartPage() {
               </table>
               <div className="flex flex-col md:flex-row gap-8 justify-between items-start mt-8">
                 <div className="space-y-4 w-full md:w-1/2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Coupon code"
-                      value={coupon}
-                      onChange={(e) => setCoupon(e.target.value)}
-                      className="border p-2 rounded w-40"
-                    />
-                    <button
-                      className="px-4 py-2 rounded bg-primary text-white font-semibold"
-                      onClick={handleApplyCoupon}
-                    >
-                      Apply
-                    </button>
-                    {discount > 0 && (
-                      <span className="ml-2 text-green-600 font-medium">Coupon applied!</span>
-                    )}
-                  </div>
+                  {/* Coupon code removed from cart page. Use on checkout page only. */}
                   <Link href="/catalog" className="inline-block mt-4 text-primary underline">Continue shopping</Link>
                 </div>
                 <div className="bg-secondary/30 p-6 rounded-xl w-full md:w-1/2">
@@ -154,12 +132,7 @@ export default function CartPage() {
                     <span>Shipping</span>
                     <span>{shipping === 0 ? "Free" : `₹${shipping.toLocaleString()}`}</span>
                   </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between mb-2 text-green-600">
-                      <span>Discount</span>
-                      <span>-₹{discountAmount.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-                    </div>
-                  )}
+                  {/* Discount removed from cart page. Use on checkout page only. */}
                   <div className="flex justify-between font-bold text-lg mt-4">
                     <span>Total</span>
                     <span>₹{total.toLocaleString(undefined, {maximumFractionDigits:2})}</span>

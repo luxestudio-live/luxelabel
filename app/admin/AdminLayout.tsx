@@ -13,7 +13,7 @@ const sidebarLinks = [
   { label: "Returns", href: "/admin/returns" },
   { label: "Sales Report", href: "/admin/reports/sales" },
   { label: "Inventory Report", href: "/admin/reports/inventory" },
-  { label: "Customer Report", href: "/admin/reports/customers" },
+
 ];
 
 const headerFilters = [

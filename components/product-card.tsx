@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button"
 import { getImageUrl } from "@/lib/utils"
 
 interface Product {
-  id: number
-  name: string
-  price: number
-  image: string
-  category: string
-  collection: string
+  id: string | number;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  collection?: string;
+  shortDesc?: string;
 }
 
 interface ProductCardProps {
@@ -21,8 +22,8 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="group cursor-pointer">
-      <Link href="/demo-product">
-        <div className="relative overflow-hidden rounded-lg bg-secondary/10 aspect-[3/4] mb-4">
+      <Link href={`/product/${product.id}`}>
+        <div className="relative overflow-hidden rounded-lg bg-secondary/10 aspect-3/4 mb-4">
           <Image
             src={getImageUrl(product.image)}
             alt={product.name}
@@ -44,12 +45,14 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
       
       <div className="space-y-2">
-        <Link href="/demo-product">
+        <Link href={`/product/${product.id}`}>
           <h3 className="font-medium text-lg hover:text-muted-foreground transition-colors duration-300 line-clamp-2">
             {product.name}
           </h3>
         </Link>
-        <p className="text-sm text-muted-foreground">{product.collection}</p>
+        <p className="text-sm text-muted-foreground" style={{ minHeight: '1.25em' }}>
+          {product.shortDesc ? product.shortDesc : ""}
+        </p>
         <p className="text-lg font-semibold">Rs. {product.price.toFixed(2)}</p>
         
         <div className="pt-2">

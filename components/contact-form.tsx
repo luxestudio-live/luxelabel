@@ -10,6 +10,7 @@ export function ContactForm() {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    phone: "",
     subject: "",
     message: ""
   })
@@ -22,11 +23,30 @@ export function ContactForm() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here
-    console.log("Form submitted:", formData)
-  }
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setSubmitError("");
+    setSubmitSuccess(false);
+    try {
+      const { db } = await import("../lib/firebaseClient");
+      const { collection, addDoc, Timestamp } = await import("firebase/firestore");
+      await addDoc(collection(db, "contacts"), {
+        ...formData,
+        createdAt: Timestamp.now(),
+      });
+      setSubmitSuccess(true);
+      setFormData({ fullName: "", email: "", phone: "", subject: "", message: "" });
+    } catch (err: any) {
+      setSubmitError("Failed to send message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -71,6 +91,22 @@ export function ContactForm() {
         </div>
 
         <div className="space-y-3">
+          <Label htmlFor="phone" className="text-sm font-medium text-foreground/80">
+            Phone Number
+          </Label>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            placeholder="Your Phone Number"
+            value={formData.phone}
+            onChange={handleInputChange}
+            className="h-12 bg-background border border-border/60 hover:border-border transition-all duration-300 focus:border-foreground/40 focus:ring-1 focus:ring-foreground/20"
+            required
+          />
+        </div>
+
+        <div className="space-y-3">
           <Label htmlFor="subject" className="text-sm font-medium text-foreground/80">
             Subject
           </Label>
@@ -102,11 +138,15 @@ export function ContactForm() {
           />
         </div>
 
+        {submitError && <div className="text-red-600 text-sm text-center">{submitError}</div>}
+        {submitSuccess && <div className="text-green-600 text-sm text-center">Message sent successfully!</div>}
+
         <Button
           type="submit"
           className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 hover:scale-[1.02] font-medium"
+          disabled={submitting}
         >
-          Send Message
+          {submitting ? "Sending..." : "Send Message"}
         </Button>
       </form>
     </div>
