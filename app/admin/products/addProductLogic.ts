@@ -116,16 +116,33 @@ export async function handleDeleteProduct(sku: string) {
 async function uploadImageToFirebaseStorage(file: File, folder: string = "products") {
   if (!file || !(file instanceof File) || !file.name || !file.size) {
     console.error("Invalid file for upload:", file);
-    return "";
+    throw new Error("Invalid file selected for upload.");
   }
+
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const inferredContentType =
+    file.type && file.type.startsWith("image/")
+      ? file.type
+      : extension === "png"
+      ? "image/png"
+      : extension === "jpg" || extension === "jpeg"
+      ? "image/jpeg"
+      : extension === "webp"
+      ? "image/webp"
+      : extension === "gif"
+      ? "image/gif"
+      : extension === "avif"
+      ? "image/avif"
+      : "application/octet-stream";
+
   const storageRef = ref(storage, `${folder}/${Date.now()}_${file.name}`);
   try {
-    await uploadBytes(storageRef, file);
+    await uploadBytes(storageRef, file, { contentType: inferredContentType });
     const url = await getDownloadURL(storageRef);
     return url;
-  } catch (err) {
+  } catch (err: any) {
     console.error("Firebase Storage upload error:", err);
-    return "";
+    throw new Error(err?.message || "Firebase Storage upload failed.");
   }
 }
 
