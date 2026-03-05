@@ -1,4 +1,46 @@
+import { auth, db, storage } from "@/lib/firebaseClient";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+function getImageUrl(value: any): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value?.url === "string") return value.url;
+  return "";
+}
+
+async function waitForAuthenticatedUser(timeoutMs = 10000): Promise<User> {
+  if (auth.currentUser) return auth.currentUser;
+
+  return new Promise((resolve, reject) => {
+    let unsubscribe: (() => void) | undefined;
+    const timeout = setTimeout(() => {
+      if (unsubscribe) unsubscribe();
+      reject(new Error("Admin Firebase session not found. Please log in again and retry."));
+    }, timeoutMs);
+
+    unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      clearTimeout(timeout);
+      if (unsubscribe) unsubscribe();
+      resolve(user);
+    });
+  });
+}
+
+async function ensureAuthenticatedAdmin() {
+  const user = await waitForAuthenticatedUser();
+  await user.getIdToken(true);
+
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists() || userSnap.data()?.isAdmin !== true) {
+    throw new Error("You are not authorized to perform admin uploads.");
+  }
+
+  return user;
+}
 // Fetch a product by SKU (or id)
 export async function fetchProductById(sku: string) {
   // Query Firestore by SKU field instead of document ID
@@ -19,24 +61,37 @@ export async function fetchProductById(sku: string) {
 
 // Update product
 export async function handleUpdateProduct(form: any, removeImages: string[] = []) {
+  await ensureAuthenticatedAdmin();
+
   const ref = doc(db, "products", form.id);
-  // Remove selected images from gallery/main/og
-  let gallery = Array.isArray(form.gallery) ? form.gallery.filter((img: any) => !removeImages.includes(img.url || img)) : [];
-  let mainImage = removeImages.includes(form.mainImage?.url || form.mainImage) ? "" : form.mainImage;
-  let ogImage = removeImages.includes(form.ogImage?.url || form.ogImage) ? "" : form.ogImage;
-  // Upload new images if provided
+
+  const galleryItems = Array.isArray(form.gallery) ? form.gallery : [];
+  const existingGalleryUrls = galleryItems
+    .map((img: any) => getImageUrl(img))
+    .filter((url: string) => !!url && !removeImages.includes(url));
+
+  const newGalleryFiles = galleryItems.filter((img: any) => img instanceof File);
+
+  let mainImage = removeImages.includes(getImageUrl(form.mainImage)) ? "" : getImageUrl(form.mainImage);
+  let ogImage = removeImages.includes(getImageUrl(form.ogImage)) ? "" : getImageUrl(form.ogImage);
+
   if (form.mainImage instanceof File) {
     mainImage = await uploadImageToFirebaseStorage(form.mainImage, `products/${form.id}/main`);
+    if (!mainImage) throw new Error("Main product image upload failed.");
   }
+
   if (form.ogImage instanceof File) {
     ogImage = await uploadImageToFirebaseStorage(form.ogImage, `products/${form.id}/og`);
+    if (!ogImage) throw new Error("OG image upload failed.");
   }
-  if (Array.isArray(form.gallery)) {
-    // Only upload new files
-    const newGalleryFiles = form.gallery.filter((img: any) => img instanceof File);
+
+  let gallery = [...existingGalleryUrls];
+  if (newGalleryFiles.length > 0) {
     const newGalleryUrls = await uploadGalleryToFirebaseStorage(newGalleryFiles, `products/${form.id}/gallery`);
-    gallery = [...gallery, ...newGalleryUrls];
+    if (newGalleryUrls.some((url) => !url)) throw new Error("One or more gallery image uploads failed.");
+    gallery = [...existingGalleryUrls, ...newGalleryUrls];
   }
+
   // Remove undefined fields (especially variants)
   const updateData: any = {
     ...form,
@@ -56,8 +111,6 @@ export async function handleDeleteProduct(sku: string) {
   const ref = doc(db, "products", sku);
   await deleteDoc(ref);
 }
-import { db, storage } from "@/lib/firebaseClient";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Helper to upload a single image to Firebase Storage and return its URL
 async function uploadImageToFirebaseStorage(file: File, folder: string = "products") {
@@ -90,6 +143,8 @@ async function uploadGalleryToFirebaseStorage(files: File[], folder: string = "p
 
 // Main submit handler for Add Product
 export async function handleAddProduct(form: any) {
+  await ensureAuthenticatedAdmin();
+
   // 1. Create a new product doc to get the ID
   // Remove undefined fields (especially variants)
   const addData: any = {

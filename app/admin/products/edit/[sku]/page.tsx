@@ -329,7 +329,7 @@ export default function EditProductPage() {
                     ))}
                   </div>
                 )}
-                <input id="product-gallery" type="file" accept="image/*" multiple onChange={e => setForm((f: any) => ({ ...f, gallery: Array.from(e.target.files || []) }))} />
+                <input id="product-gallery" type="file" accept="image/*" multiple onChange={e => setForm((f: any) => ({ ...f, gallery: [...(Array.isArray(f.gallery) ? f.gallery : []), ...Array.from(e.target.files || [])] }))} />
               </div>
             </div>
             <div className="mt-6">

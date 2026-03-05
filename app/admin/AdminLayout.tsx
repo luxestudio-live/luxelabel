@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { auth } from "@/lib/firebaseClient";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 const sidebarLinks = [
   { label: "Dashboard", href: "/admin/dashboard" },
@@ -46,10 +48,27 @@ export default function AdminLayout({ children }) {
     }
   }, [pathname, router]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (pathname === "/admin/login") return;
+      if (user) return;
+
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("adminLoggedIn");
+        document.cookie = "adminLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      }
+      setLoggedIn(false);
+      router.replace("/admin/login");
+    });
+
+    return () => unsubscribe();
+  }, [pathname, router]);
+
   function handleLogout() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("adminLoggedIn");
       document.cookie = "adminLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      signOut(auth).catch(() => {});
       setLoggedIn(false);
       router.replace("/admin/login");
     }
