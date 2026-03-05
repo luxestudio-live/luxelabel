@@ -11,8 +11,9 @@ import StarterKit from '@tiptap/starter-kit';
 
 export default function EditProductPage() {
   const params = useParams();
-  const sku = params?.sku as string;
-  console.log("EditProductPage mounted, sku:", sku); // Debug log
+  // Sanitize SKU: decode and trim
+  const sku = decodeURIComponent((params?.sku as string || "")).trim();
+  console.log("EditProductPage mounted, sanitized sku:", sku); // Debug log
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -93,8 +94,8 @@ export default function EditProductPage() {
       const productData = {
         ...form,
         colors,
-        sizes,
-        variants: undefined // Remove variants from final object
+        sizes
+        // Do NOT remove variants, so it will be updated
       };
       await handleUpdateProduct(productData, removeImages);
       setSuccess("Product updated successfully!");
@@ -286,7 +287,7 @@ export default function EditProductPage() {
         )}
         {/* Step 2: Image Edit */}
         {step === 2 && (
-          <form autoComplete="off" onSubmit={handleUpdate}>
+          <form autoComplete="off" onSubmit={e => { if (loading) return; handleUpdate(e); }}>
             <h2 className="text-xl font-bold text-primary mb-4">Product Images</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -350,7 +351,7 @@ export default function EditProductPage() {
             </div>
             <div className="mt-8 flex justify-between">
               <button type="button" className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold shadow hover:bg-gray-300 transition" onClick={() => setStep(1)}>Back</button>
-              <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition">Update Product</button>
+              <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition" disabled={loading}>{loading ? "Updating..." : "Update Product"}</button>
             </div>
           </form>
         )}

@@ -20,7 +20,7 @@ export function AboutHeritage() {
                 Our Heritage: A Symphony of Style and Substance
               </h2>
               <p className="text-muted-foreground leading-relaxed text-balance">
-                Born from a passion for exquisite design and enduring quality, Aura Moda began its journey in the heart of
+                Born from a passion for exquisite design and enduring quality, LuxxeLabels began its journey in the heart of
                 fashion's most inspiring cities. Our founders envisioned a brand that would not only dress individuals but also tell a
                 story of unparalleled artistry and dedication.
               </p>

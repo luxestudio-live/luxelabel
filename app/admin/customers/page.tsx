@@ -3,7 +3,7 @@ import AdminLayout from "../AdminLayout";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebaseClient";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 // Fetch customers from Firestore
 function useCustomers() {
@@ -37,7 +37,22 @@ export default function CustomersPage() {
   const { customers, loading } = useCustomers();
   const [localCustomers, setLocalCustomers] = useState<any[]>([]);
   useEffect(() => {
-    setLocalCustomers(customers);
+    async function fetchOrderCounts() {
+      // For each customer, fetch order count by email
+      const updated = await Promise.all(customers.map(async (c) => {
+        if (!c.email) return { ...c, totalOrders: 0 };
+        try {
+          const q = query(collection(db, "orders"), where("email", "==", c.email));
+          const snap = await getDocs(q);
+          return { ...c, totalOrders: snap.size };
+        } catch {
+          return { ...c, totalOrders: 0 };
+        }
+      }));
+      setLocalCustomers(updated);
+    }
+    if (customers.length > 0) fetchOrderCounts();
+    else setLocalCustomers([]);
   }, [customers]);
 
   async function handleDeleteCustomer(id: string) {

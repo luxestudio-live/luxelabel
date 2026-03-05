@@ -11,11 +11,11 @@ import { Footer } from "@/components/footer"
 import { getImageUrl } from "@/lib/utils"
 
 const productImages = [
-  "luxury-brown-leather-handbag-designer-bag.jpg",
-  "elegant-woman-in-white-dress-luxury-fashion.jpg",
-  "elegant-woman-in-flowing-beige-dress-minimal-backg.jpg",
-  "woman-in-brown-winter-coat-snowy-landscape-luxury-.jpg",
-  "cream-beige-cashmere-scarf-luxury-accessory.jpg"
+  "/luxury-brown-leather-handbag-designer-bag.jpg",
+  "/elegant-woman-in-white-dress-luxury-fashion.jpg",
+  "/elegant-woman-in-flowing-beige-dress-minimal-backg.jpg",
+  "/woman-in-brown-winter-coat-snowy-landscape-luxury-.jpg",
+  "/cream-beige-cashmere-scarf-luxury-accessory.jpg"
 ]
 
 const testimonials = [
@@ -44,7 +44,7 @@ const testimonials = [
     id: 4,
     name: "Liam K.",
     rating: 5,
-    comment: "Exceptional quality and exquisite design. Aura Moda never disappoints. This bag is a statement piece that elevates my favorite.",
+    comment: "Exceptional quality and exquisite design. LuxxeLabels never disappoints. This bag is a statement piece that elevates my favorite.",
     verified: true
   },
   {
@@ -68,19 +68,19 @@ const completeTheLookProducts = [
     id: 2,
     name: "The 'Midnight Suede' Heels",
     price: 189.00,
-    image: "woman-in-brown-winter-coat-snowy-landscape-luxury-.jpg"
+    image: "/woman-in-brown-winter-coat-snowy-landscape-luxury-.jpg"
   },
   {
     id: 3,
     name: "The 'Golden Whisper' Necklace", 
     price: 150.00,
-    image: "luxury-fashion-accessories-hand-jewelry.jpg"
+    image: "/luxury-fashion-accessories-hand-jewelry.jpg"
   },
   {
     id: 4,
     name: "The 'Artisan Silk' Scarf",
     price: 450.00,
-    image: "cream-beige-cashmere-scarf-luxury-accessory.jpg"
+    image: "/cream-beige-cashmere-scarf-luxury-accessory.jpg"
   }
 ]
 
@@ -266,12 +266,12 @@ export default function DemoProductPage() {
               <h2 className="text-4xl font-light">A Legacy Woven in Leather</h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  At Aura Moda, every stitch tells a story, and every creation is a testament to our unwavering 
+                  At LuxxeLabels, every stitch tells a story, and every creation is a testament to our unwavering 
                   commitment to precision and artistry. Hand-assembled by our master craftsmen, each piece carries 
                   the soul of generations of leather artisans, ensuring a lifetime of enduring elegance.
                 </p>
                 <p>
-                  I invest the right details in the final polish, as Aura Moda has enabled a new journey of precision and dedication. 
+                  I invest the right details in the final polish, as LuxxeLabels has enabled a new journey of precision and dedication. 
                   We blend ancestral techniques with contemporary style, resulting in pieces that transcend fleeting trends. 
                   Each handbag is destined to be cherished for a lifetime.
                 </p>
@@ -279,7 +279,7 @@ export default function DemoProductPage() {
             </div>
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
               <Image
-                src={getImageUrl("hands-crafting-luxury-leather-handbag-artisan-work.jpg")}
+                src={getImageUrl("/hands-crafting-luxury-leather-handbag-artisan-work.jpg")}
                 alt="Artisan crafting leather handbag"
                 fill
                 className="object-cover"
@@ -341,7 +341,7 @@ export default function DemoProductPage() {
         <div className="mt-20 py-16 bg-gray-50 rounded-2xl px-8">
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <h2 className="text-3xl font-light">Personalize Your Item</h2>
-            <p className="text-muted-foreground">Elevate your Aura Moda pieces with bespoke customization.</p>
+            <p className="text-muted-foreground">Elevate your LuxxeLabels pieces with bespoke customization.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
               <div>

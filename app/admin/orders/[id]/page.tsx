@@ -94,7 +94,7 @@ const InvoicePDF = ({ order }: { order: any }) => (
       {/* System-generated Bill Note */}
       <View style={pdfStyles.section}>
         <Text style={pdfStyles.noteTitle}>System-generated Bill Note</Text>
-        <Text style={pdfStyles.noteText}>This invoice was generated electronically by LuxeLabels. No signature is required. For any queries, contact support@luxxelabels.com.</Text>
+        <Text style={pdfStyles.noteText}>This invoice was generated electronically by LuxeLabels. No signature is required. For any queries, contact contact@luxelabels.co.in.</Text>
       </View>
     </Page>
   </Document>

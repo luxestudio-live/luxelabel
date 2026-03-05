@@ -5,13 +5,15 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function OrderConfirmationPage() {
+
+import { Suspense } from "react";
+
+function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams ? searchParams.get("paymentId") : null;
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const router = require('next/navigation').useRouter();
   useEffect(() => {
     async function fetchOrder() {
@@ -23,7 +25,6 @@ export default function OrderConfirmationPage() {
       try {
         const { db, auth } = await import("../../lib/firebaseClient");
         const { collection, query, where, getDocs } = await import("firebase/firestore");
-        // const user = auth.currentUser; // Not used
         const q = query(collection(db, "orders"), where("paymentId", "==", paymentId));
         const snap = await getDocs(q);
         if (snap.empty) {
@@ -53,22 +54,19 @@ export default function OrderConfirmationPage() {
   } else if (order) {
     content = (
       <>
+        {/* ...existing code for order details, items, summary, etc... */}
         <div className="mb-6 text-center">
           <div className="text-green-600 text-xl font-semibold mb-2">Thank you for your purchase!</div>
           <div className="text-muted-foreground">Your order has been placed successfully.</div>
-          <button
-            className="mt-4 px-6 py-2 rounded bg-primary text-white font-bold text-lg hover:bg-primary/90 transition shadow"
-            onClick={() => window.print()}
-          >
-            Print Invoice
-          </button>
         </div>
+        {/* ...existing code for order details, shipping address, items, summary, etc... */}
         <div className="mb-6">
           <div className="font-semibold text-lg mb-2">Order Details</div>
           <div className="mb-2">Status: <span className="font-semibold">{order.order_status || order.status || '-'}</span></div>
           <div className="mb-2">Courier Partner: <span className="font-semibold">{order.courier_partner || '-'}</span></div>
           <div className="mb-2">Tracking Number: <span className="font-semibold">{order.tracking_number || '-'}</span></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* ...existing code for order fields... */}
             <div>
               <div className="text-sm text-muted-foreground">Order ID</div>
               <div className="font-mono">{order.orderId || order.id}</div>
@@ -119,6 +117,7 @@ export default function OrderConfirmationPage() {
             </div>
           </div>
         </div>
+        {/* ...existing code for shipping address, items, summary, etc... */}
         <div className="mb-6">
           <div className="font-semibold text-lg mb-2">Shipping Address</div>
           <div className="text-sm text-muted-foreground">{order.shippingMethod === "express" ? "Express (2-3 days)" : "Standard (5-7 days)"} - ₹{order.shipping}</div>
@@ -207,13 +206,19 @@ export default function OrderConfirmationPage() {
   } else {
     content = null;
   }
+  return content;
+}
+
+export default function OrderConfirmationPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-16 md:py-20">
         <div className="max-w-2xl mx-auto bg-white dark:bg-card p-8 rounded-xl shadow-lg border border-border/30">
           <h1 className="text-3xl md:text-4xl font-bold mb-6 text-primary text-center">Order Confirmation</h1>
-          {content}
+          <Suspense fallback={<div className="text-center text-lg">Loading...</div>}>
+            <OrderConfirmationContent />
+          </Suspense>
         </div>
       </main>
       <Footer />

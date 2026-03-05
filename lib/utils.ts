@@ -5,17 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getImageUrl(path: string) {
-  // If path is a full URL (http/https), return as is
-  if (/^https?:\/\//.test(path)) {
+export function getImageUrl(path: unknown) {
+  console.log("getImageUrl called with:", path, typeof path);
+  if (typeof path !== "string" || !path.trim()) return "/placeholder.png";
+  if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
-  // Remove leading slash if present
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  // In production (GitHub Pages), prepend the base path
-  if (process.env.NODE_ENV === 'production') {
-    return `/luxelabel/${cleanPath}`;
-  }
-  // In development, use the path as is
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
   return `/${cleanPath}`;
 }

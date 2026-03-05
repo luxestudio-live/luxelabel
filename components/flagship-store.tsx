@@ -76,20 +76,6 @@ export function FlagshipStore() {
                     <div className="absolute top-3 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap">Parking</div>
                   </div>
                 </div>
-                
-                {/* Address & Directions */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="text-center md:text-left">
-                    <h4 className="text-lg font-serif font-light mb-2">Store Address</h4>
-                    <p className="text-lg font-medium mb-1">123 Elegance XYZ Street</p>
-                    <p className="text-muted-foreground">Mumbai, India 400001</p>
-                  </div>
-                  <div className="text-center md:text-left">
-                    <h4 className="text-lg font-serif font-light mb-2">Getting Here</h4>
-                    <p className="text-sm text-muted-foreground mb-1">5 min walk from Metro Station</p>
-                    <p className="text-sm text-muted-foreground">Valet parking available</p>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -100,11 +86,11 @@ export function FlagshipStore() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-foreground rounded-full"></div>
-                    <span className="font-medium">+91 2 23 45 67 89</span>
+                    <span className="font-medium">+91 7986123045</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-foreground rounded-full"></div>
-                    <span className="text-muted-foreground text-sm">contact@luxxelabels.com</span>
+                    <span className="text-muted-foreground text-sm">contact@luxelabels.co.in</span>
                   </div>
                 </div>
               </div>
@@ -114,37 +100,15 @@ export function FlagshipStore() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Mon - Fri</span>
-                    <span className="font-medium">10AM - 8PM</span>
+                    <span className="font-medium">9AM - 9PM</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Saturday</span>
-                    <span className="font-medium">10AM - 9PM</span>
+                    <span className="font-medium">9AM - 9PM</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Sunday</span>
-                    <span className="font-medium">12PM - 6PM</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-background/80 backdrop-blur-sm border border-border/40 p-6 rounded-lg">
-                <h3 className="text-xl font-serif font-light mb-4">Services</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-1.5 h-1.5 bg-foreground rounded-full"></div>
-                    <span>Personal Styling</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-1.5 h-1.5 bg-foreground rounded-full"></div>
-                    <span>Exclusive Collections</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-1.5 h-1.5 bg-foreground rounded-full"></div>
-                    <span>Private Shopping</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-1.5 h-1.5 bg-foreground rounded-full"></div>
-                    <span>Alterations</span>
+                    <span className="font-medium">9AM - 9PM</span>
                   </div>
                 </div>
               </div>

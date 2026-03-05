@@ -168,11 +168,6 @@ export default function CheckoutPage() {
       return;
     }
     if (user) {
-      setBuyNowItem(null);
-      const stored = localStorage.getItem("buyNowItem");
-      if (stored) {
-        setBuyNowItem(JSON.parse(stored));
-      }
       // Pre-fill form fields with user data
       setFormData(prev => ({
         ...prev,
@@ -184,14 +179,17 @@ export default function CheckoutPage() {
   }, [user, isLoading]);
 
   // Use buyNowItem if present, else cart
-  const items = buyNowItem ? [buyNowItem] : cart;
+  let items = cart;
+  const buyNowActive = typeof window !== "undefined" ? localStorage.getItem("buyNowActive") : null;
+  const buyNowItemStored = typeof window !== "undefined" ? localStorage.getItem("buyNowItem") : null;
+  if (buyNowActive && buyNowItemStored) {
+    items = [JSON.parse(buyNowItemStored)];
+  }
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  // Shipping fee based on selected method
-  const shipping = shippingMethod === 'express' ? 199 : 99;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax - discountAmount;
+  // Shipping charge logic: only one method, 199 if subtotal < 5000
+  const shipping = subtotal < 5000 ? 199 : 0;
+  const total = subtotal + shipping - discountAmount;
 
-  // ...existing code...
   // Form state for pre-filled fields
   const [formData, setFormData] = useState({
     name: "",
@@ -280,24 +278,15 @@ export default function CheckoutPage() {
             <div>
               <h2 className="text-xl font-semibold mb-4">Shipping Method</h2>
               <div className="space-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="shipping"
-                    checked={shippingMethod === 'express'}
-                    onChange={() => setShippingMethod('express')}
-                  />
-                  <span>Express (2-3 days) - ₹199.00</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="shipping"
-                    checked={shippingMethod === 'standard'}
-                    onChange={() => setShippingMethod('standard')}
-                  />
-                  <span>Standard (5-7 days) - ₹99.00</span>
-                </label>
+                <div className="flex items-center gap-2">
+                  {subtotal >= 5000 ? (
+                    <span>
+                      Shipping Charges - <span className="line-through text-gray-500">₹199.00</span> <span className="text-green-700 font-semibold ml-1">Free</span>
+                    </span>
+                  ) : (
+                    <span>Shipping Charges - ₹199.00</span>
+                  )}
+                </div>
               </div>
             </div>
             <div>
@@ -325,6 +314,12 @@ export default function CheckoutPage() {
                   if (!value || value.trim() === "") {
                     errors[field.key] = `Please enter ${field.label}`;
                   }
+                  if (field.key === 'zip') {
+                    // Indian PIN code validation: must be exactly 6 digits
+                    if (!/^[1-9][0-9]{5}$/.test(value)) {
+                      errors.zip = 'Please enter a valid 6-digit Indian ZIP code';
+                    }
+                  }
                 }
                 setFieldErrors(errors);
                 if (Object.keys(errors).length > 0) return;
@@ -341,7 +336,7 @@ export default function CheckoutPage() {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    amount: subtotal + shipping + tax - discountAmount,
+                    amount: subtotal + shipping - discountAmount,
                     currency: 'INR',
                     receipt: `order_${Date.now()}`,
                   }),
@@ -352,7 +347,8 @@ export default function CheckoutPage() {
                   return;
                 }
                 const options = {
-                  key: 'rzp_test_RjmxgXfQRU1nog',
+                  // TODO: Replace with your actual Razorpay LIVE key below
+                  key: 'rzp_live_Ru9b4tTMPbnxy6',
                   amount: order.amount,
                   currency: order.currency,
                   name: 'Luxxe Labels',
@@ -382,8 +378,7 @@ export default function CheckoutPage() {
                         subtotal,
                         shipping,
                         shippingMethod,
-                        tax,
-                        total: subtotal + shipping + tax - discountAmount,
+                        total: subtotal + shipping - discountAmount,
                         coupon: appliedCoupon?.code || null,
                         discount: discountAmount,
                         paymentId: response.razorpay_payment_id,
@@ -393,6 +388,8 @@ export default function CheckoutPage() {
                       // Clear cart after order is placed
                       if (typeof window !== "undefined") {
                         localStorage.removeItem("cart");
+                                              localStorage.removeItem("buyNowItem");
+                                              localStorage.removeItem("buyNowActive");
                       }
                       if (typeof window !== "undefined" && window.dispatchEvent) {
                         window.dispatchEvent(new Event("cartUpdated"));
@@ -418,6 +415,13 @@ export default function CheckoutPage() {
                     contact: formData.phone,
                   },
                   theme: { color: '#6366f1' },
+                };
+                (options as any).modal = {
+                  ondismiss: function() {
+                    // Restore scroll and interactivity
+                    document.body.style.overflow = '';
+                    document.body.style.position = '';
+                  }
                 };
                 const rzp = new window.Razorpay(options);
                 rzp.open();
@@ -477,12 +481,12 @@ export default function CheckoutPage() {
                         <span className="text-xs text-muted-foreground">Image</span>
                       )}
                     </div>
-                    <div>
-                      <div className="font-semibold">{item.name}</div>
-                      <div className="text-muted-foreground text-sm">{item.variant}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold break-words whitespace-normal">{item.name}</div>
+                      <div className="text-muted-foreground text-sm break-words whitespace-normal">{item.variant}</div>
                       <div className="text-muted-foreground text-sm">Qty: {item.quantity} {freeLabel && <span className="text-green-600 font-bold ml-2">{freeLabel}</span>}</div>
                     </div>
-                    <div className="font-bold">₹{(item.price * item.quantity).toLocaleString()}</div>
+                    <div className="font-bold text-right min-w-[90px]">₹{(item.price * item.quantity).toLocaleString()}</div>
                   </div>
                 );
               })}
@@ -509,12 +513,12 @@ export default function CheckoutPage() {
                 </div>
               )}
               <div className="flex justify-between text-lg">
-                <span>Shipping</span>
-                <span>₹{shipping.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-lg">
-                <span>Tax</span>
-                <span>₹{tax.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
+                <span>Shipping charges</span>
+                {shipping === 0 ? (
+                  <span><span className="line-through text-gray-500">₹199.00</span> <span className="text-green-700 font-semibold ml-1">Free</span></span>
+                ) : (
+                  <span>₹{shipping.toLocaleString()}</span>
+                )}
               </div>
               <div className="flex justify-between font-bold text-xl mt-2">
                 <span>Total</span>

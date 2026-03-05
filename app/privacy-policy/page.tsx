@@ -26,7 +26,7 @@ const sections = [
   },
   {
     title: "Contact Information",
-    content: "For privacy concerns, email support@luxelabel.in or use the Help page."
+    content: "For privacy concerns, email suppot@luxelabels.co.in or use the Help page."
   },
 ];
 

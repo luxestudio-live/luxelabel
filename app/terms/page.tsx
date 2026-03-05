@@ -34,7 +34,7 @@ const sections = [
   },
   {
     title: "Contact Information",
-    content: "For any queries, contact support@luxelabel.in or use the Help page."
+    content: "For any queries, contact suppot@luxelabels.co.in or use the Help page."
   },
 ];
 

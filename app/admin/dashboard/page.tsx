@@ -46,17 +46,22 @@ export default function AdminDashboard() {
   // Removed unused filter state
   const [products, setProducts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
-  // Removed unused loading state
+  const [orders, setOrders] = useState<any[]>([]);
+  //
 
   useEffect(() => {
     async function fetchData() {
+      // setLoading removed
       try {
         const prodSnap = await getDocs(collection(db, "products"));
         setProducts(prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         const custSnap = await getDocs(collection(db, "users"));
         setCustomers(custSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const orderSnap = await getDocs(collection(db, "orders"));
+        setOrders(orderSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (e) {
-        // Optionally handle error
+        // Optionally handle error or log
+        console.error("Error fetching dashboard data", e);
       }
     }
     fetchData();
@@ -64,19 +69,42 @@ export default function AdminDashboard() {
 
   // KPIs
   const totalCustomers = customers.length;
-  const topProduct = products.length > 0
-    ? products.reduce((a, b) => (a.totalOrders || 0) > (b.totalOrders || 0) ? a : b, products[0]).name
-    : "-";
-  // Dummy for sales/orders, real for products/customers
+  // Orders and sales calculations
+  const totalOrders = orders.length;
+  const totalSales = orders.reduce((sum, o) => sum + (typeof o.total === "number" ? o.total : Number(o.total) || 0), 0);
+  // Today's sales/orders
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todaysOrders = orders.filter(o => {
+    if (!o.createdAt) return false;
+    const orderDate = o.createdAt.seconds ? new Date(o.createdAt.seconds * 1000) : new Date(o.createdAt);
+    return orderDate >= today;
+  });
+  const todaysSales = todaysOrders.reduce((sum, o) => sum + (typeof o.total === "number" ? o.total : Number(o.total) || 0), 0);
+  // Order status counts
+  const pendingOrders = orders.filter(o => (o.order_status || o.status || "").toLowerCase().includes("pending")).length;
+  const completedOrders = orders.filter(o => (o.order_status || o.status || "").toLowerCase().includes("completed")).length;
+  const refundOrders = orders.filter(o => (o.order_status || o.status || "").toLowerCase().includes("refund") || (o.order_status || o.status || "").toLowerCase().includes("return")).length;
+  // Top product by quantity sold
+  let productSales: Record<string, number> = {};
+  orders.forEach(o => {
+    if (Array.isArray(o.items)) {
+      o.items.forEach((item: any) => {
+        if (!item.name) return;
+        productSales[item.name] = (productSales[item.name] || 0) + (item.quantity || 1);
+      });
+    }
+  });
+  const topProduct = Object.keys(productSales).length > 0 ? Object.entries(productSales).sort((a,b) => b[1]-a[1])[0][0] : "-";
   const KPIS = [
-    "₹24,000", // Total Sales (dummy)
-    "₹24,000", // Today's Sales (dummy)
-    32,         // Orders (dummy)
-    2,          // Pending Orders (dummy)
-    30,         // Completed Orders (dummy)
-    1,          // Refunds/Returns (dummy)
-    totalCustomers, // Total Customers (live)
-    topProduct      // Top Product (live)
+    `₹${totalSales.toLocaleString()}`,
+    `₹${todaysSales.toLocaleString()}`,
+    totalOrders,
+    pendingOrders,
+    completedOrders,
+    refundOrders,
+    totalCustomers,
+    topProduct
   ].map((value, idx) => ({ ...KPI_CONFIG[idx], value }));
 
   // Low stock products (live)
@@ -96,16 +124,31 @@ export default function AdminDashboard() {
     : [];
   const recentSignups = sortedSignups.slice(0, 3).map(u => ({ name: u.name || u.email || "User", date: u.createdAt || "-" }));
 
-  // Other widgets remain dummy
-  const latestOrders = [
-    { id: "ORD1001", customer: "Jane Doe", total: "₹4,999", status: "Pending" },
-    { id: "ORD1002", customer: "Rahul Singh", total: "₹7,499", status: "Completed" },
-    { id: "ORD1003", customer: "Amit Patel", total: "₹2,499", status: "Refund" },
-    { id: "ORD1004", customer: "Priya Sharma", total: "₹1,999", status: "Pending" },
-  ];
-  const pendingRefunds = [
-    { id: "ORD1003", customer: "Amit Patel", amount: "₹2,499" },
-  ];
+  // Latest orders (most recent 4)
+  const sortedOrders = [...orders].sort((a, b) => {
+    if (a.createdAt && b.createdAt) {
+      const ad = a.createdAt.seconds ? new Date(a.createdAt.seconds * 1000) : new Date(a.createdAt);
+      const bd = b.createdAt.seconds ? new Date(b.createdAt.seconds * 1000) : new Date(b.createdAt);
+      return bd.getTime() - ad.getTime();
+    }
+    return 0;
+  });
+  const latestOrders = sortedOrders.slice(0, 4).map(o => ({
+    id: o.orderId || o.id,
+    customer: o.name || o.email || "User",
+    total: `₹${(typeof o.total === "number" ? o.total : Number(o.total) || 0).toLocaleString()}`,
+    status: o.order_status || o.status || "-"
+  }));
+
+  // Pending refunds/returns
+  const pendingRefunds = orders.filter(o => {
+    const status = (o.order_status || o.status || "").toLowerCase();
+    return status.includes("refund") || status.includes("return");
+  }).map(o => ({
+    id: o.orderId || o.id,
+    customer: o.name || o.email || "User",
+    amount: `₹${(typeof o.total === "number" ? o.total : Number(o.total) || 0).toLocaleString()}`
+  }));
 
   return (
     <AdminLayout>
@@ -180,7 +223,7 @@ export default function AdminDashboard() {
                   if (order.status === "Completed") { badgeClass = "bg-green-600 text-white"; badgeIcon = "✅"; }
                   else if (order.status === "Refund") { badgeClass = "bg-red-600 text-white"; badgeIcon = "↩️"; }
                   return (
-                    <div key={order.id} className="min-w-[260px] max-w-xs rounded-2xl bg-black/60 border-l-8 border-blue-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
+                    <div key={order.id} className="min-w-65 max-w-xs rounded-2xl bg-black/60 border-l-8 border-blue-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="font-mono text-xs bg-gray-800 text-white px-3 py-1 rounded-lg">{order.id}</span>
                         <span className={`flex items-center gap-1 text-xs px-3 py-1 rounded-lg font-bold ${badgeClass}`}>
@@ -199,7 +242,7 @@ export default function AdminDashboard() {
               <h3 className="font-extrabold text-3xl mb-4 text-red-700 drop-shadow flex items-center gap-2">Low Stock Alerts <span className="text-lg">⚠️</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
                 {lowStock.map(item => (
-                  <div key={item.product} className="min-w-[220px] max-w-xs rounded-2xl bg-black/60 border-l-8 border-red-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
+                  <div key={item.product} className="min-w-55 max-w-xs rounded-2xl bg-black/60 border-l-8 border-red-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
                     <div className="text-lg font-bold text-white mb-2">{item.product}</div>
                     <div className="text-xl font-extrabold text-red-400">{item.stock} left</div>
                   </div>
@@ -211,7 +254,7 @@ export default function AdminDashboard() {
               <h3 className="font-extrabold text-3xl mb-4 text-yellow-700 drop-shadow flex items-center gap-2">Pending Refunds/Returns <span className="text-lg">💸</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
                 {pendingRefunds.map(ref => (
-                  <div key={ref.id} className="min-w-[220px] max-w-xs rounded-2xl bg-black/60 border-l-8 border-yellow-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
+                  <div key={ref.id} className="min-w-55 max-w-xs rounded-2xl bg-black/60 border-l-8 border-yellow-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="font-mono text-xs bg-yellow-700 text-white px-3 py-1 rounded-lg">{ref.id}</span>
                     </div>
@@ -226,7 +269,7 @@ export default function AdminDashboard() {
               <h3 className="font-extrabold text-3xl mb-4 text-purple-700 drop-shadow flex items-center gap-2">Recent Signups <span className="text-lg">🆕</span></h3>
               <div className="flex gap-6 overflow-x-auto pb-2">
                 {recentSignups.map(user => (
-                  <div key={user.name} className="min-w-[220px] max-w-xs rounded-2xl bg-black/60 border-l-8 border-purple-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
+                  <div key={user.name} className="min-w-55 max-w-xs rounded-2xl bg-black/60 border-l-8 border-purple-500 shadow-lg p-6 flex flex-col justify-between transition hover:scale-105 hover:shadow-2xl">
                     <div className="text-lg font-bold text-white mb-2">{user.name}</div>
                     <div className="text-base text-purple-300 font-semibold">{user.date}</div>
                   </div>

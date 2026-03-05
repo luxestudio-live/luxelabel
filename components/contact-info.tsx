@@ -13,18 +13,7 @@ export function ContactInfo() {
       </div>
 
       <div className="space-y-8">
-        <div className="flex items-start gap-5">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-foreground/5 border border-border/40 shrink-0">
-            <MapPin className="h-5 w-5 text-foreground/70" />
-          </div>
-          <div className="pt-2">
-            <h3 className="font-semibold text-foreground mb-2 text-base">Address:</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              123 Elegance XYZ Street<br />
-              Mumbai, India
-            </p>
-          </div>
-        </div>
+
 
         <div className="flex items-start gap-5">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-foreground/5 border border-border/40 shrink-0">
@@ -33,7 +22,7 @@ export function ContactInfo() {
           <div className="pt-2">
             <h3 className="font-semibold text-foreground mb-2 text-base">Phone:</h3>
             <p className="text-muted-foreground">
-              +91 2 23 45 67 89
+              +91 7986123045
             </p>
           </div>
         </div>
@@ -45,7 +34,7 @@ export function ContactInfo() {
           <div className="pt-2">
             <h3 className="font-semibold text-foreground mb-2 text-base">Email:</h3>
             <p className="text-muted-foreground">
-              contact@luxxelabels.com
+              contact@luxelabels.co.in
             </p>
           </div>
         </div>
@@ -57,7 +46,7 @@ export function ContactInfo() {
           <div className="pt-2">
             <h3 className="font-semibold text-foreground mb-2 text-base">Office Hours:</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Mon-Fri: 9:00 AM - 6:00 PM IST
+              Mon-Fri: 9:00 AM - 9:00 PM IST
             </p>
           </div>
         </div>

@@ -56,13 +56,16 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="text-lg font-semibold">Rs. {product.price.toFixed(2)}</p>
         
         <div className="pt-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="w-full hover:bg-foreground hover:text-background transition-all duration-300"
-          >
-            View Details
-          </Button>
+          <Link href={`/product/${product.id}`} passHref legacyBehavior>
+            <Button 
+              as="a"
+              variant="outline" 
+              size="sm"
+              className="w-full hover:bg-foreground hover:text-background transition-all duration-300"
+            >
+              View Details
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

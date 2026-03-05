@@ -31,7 +31,7 @@ export function Craftsmanship() {
                 The Art of Craftsmanship: Where Tradition Meets Innovation
               </h2>
               <p className="text-muted-foreground leading-relaxed text-balance">
-                At Aura Moda, craftsmanship is not just a process; it's a living tradition passed down through generations. Our
+                At LuxxeLabels, craftsmanship is not just a process; it's a living tradition passed down through generations. Our
                 ateliers are sanctuaries where skilled artisans transform the finest materials into wearable art.
               </p>
               <p className="text-muted-foreground leading-relaxed text-balance">

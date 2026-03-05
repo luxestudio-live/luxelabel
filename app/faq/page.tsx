@@ -29,7 +29,7 @@ const faqData = [
   {
     category: "Returns",
     questions: [
-      { q: "How do I request a return?", a: "Go to your order details and click 'Request return', or contact support via Help page." },
+      { q: "How do I request a return?", a: "To request a return, please contact our support team via the Help page or email suppot@luxelabels.co.in." },
       { q: "What is the return window?", a: "Returns are accepted within 7 days of delivery for eligible products." },
     ],
   },

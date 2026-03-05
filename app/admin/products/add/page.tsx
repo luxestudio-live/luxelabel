@@ -58,10 +58,17 @@ export default function AddProductPage() {
   // Auto-generate slug from name
   const handleNameChange = (e: any) => {
     const name = e.target.value;
-    setForm(f => ({ ...f, name, slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") }));
+    // Always trim and lowercase for slug and sku
+    setForm(f => ({
+      ...f,
+      name,
+      slug: name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+      sku: name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+    }));
   };
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    if (loading) return; // Prevent duplicate submissions
     setLoading(true);
     setError("");
     setSuccess("");
@@ -201,15 +208,14 @@ export default function AddProductPage() {
               <div className="mt-6 border rounded-xl p-4 bg-blue-50">
                 <label className="font-semibold mb-2 block">Product Variants</label>
                 {(form.variants || []).map((variant: any, idx: number) => (
-                  <div key={idx} className="grid md:grid-cols-5 gap-4 mb-4 items-end">
+                  <div key={idx} className="grid md:grid-cols-2 gap-4 mb-4 items-end">
                     <div>
                       <label className="text-sm font-semibold">Type</label>
                       <select className="px-2 py-2 rounded border w-full" value={variant.type || "color"} onChange={e => {
                         const variants = [...form.variants];
                         variants[idx].type = e.target.value;
-                        // Clear the other field when switching type
-                        if (e.target.value === "color") variants[idx].size = "";
-                        if (e.target.value === "size") variants[idx].color = "";
+                        if (e.target.value === "color") variants[idx].sizeName = "";
+                        if (e.target.value === "size") variants[idx].colorName = "";
                         setForm(f => ({ ...f, variants }));
                       }}>
                         <option value="color">Color</option>
@@ -227,57 +233,15 @@ export default function AddProductPage() {
                       </div>
                     )}
                     {variant.type === "size" && (
-                      <>
-                        <div>
-                          <label className="text-sm font-semibold">Size Name</label>
-                          <input className="px-2 py-2 rounded border w-full" value={variant.sizeName || ""} onChange={e => {
-                            const variants = [...form.variants];
-                            variants[idx].sizeName = e.target.value;
-                            setForm(f => ({ ...f, variants }));
-                          }} />
-                        </div>
-                        <div>
-                          <label className="text-sm font-semibold">Width</label>
-                          <input className="px-2 py-2 rounded border w-full" value={variant.width || ""} onChange={e => {
-                            const variants = [...form.variants];
-                            variants[idx].width = e.target.value;
-                            setForm(f => ({ ...f, variants }));
-                          }} />
-                        </div>
-                        <div>
-                          <label className="text-sm font-semibold">Bust</label>
-                          <input className="px-2 py-2 rounded border w-full" value={variant.bust || ""} onChange={e => {
-                            const variants = [...form.variants];
-                            variants[idx].bust = e.target.value;
-                            setForm(f => ({ ...f, variants }));
-                          }} />
-                        </div>
-                        <div>
-                          <label className="text-sm font-semibold">Sleeve Length</label>
-                          <input className="px-2 py-2 rounded border w-full" value={variant.sleeveLength || ""} onChange={e => {
-                            const variants = [...form.variants];
-                            variants[idx].sleeveLength = e.target.value;
-                            setForm(f => ({ ...f, variants }));
-                          }} />
-                        </div>
-                      </>
+                      <div>
+                        <label className="text-sm font-semibold">Size Name</label>
+                        <input className="px-2 py-2 rounded border w-full" value={variant.sizeName || ""} onChange={e => {
+                          const variants = [...form.variants];
+                          variants[idx].sizeName = e.target.value;
+                          setForm(f => ({ ...f, variants }));
+                        }} />
+                      </div>
                     )}
-                    <div>
-                      <label className="text-sm font-semibold">Price</label>
-                      <input type="number" className="px-2 py-2 rounded border w-full" value={variant.price || ""} onChange={e => {
-                        const variants = [...form.variants];
-                        variants[idx].price = e.target.value;
-                        setForm(f => ({ ...f, variants }));
-                      }} />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold">Stock Qty</label>
-                      <input type="number" className="px-2 py-2 rounded border w-full" value={variant.stockQty || ""} onChange={e => {
-                        const variants = [...form.variants];
-                        variants[idx].stockQty = e.target.value;
-                        setForm(f => ({ ...f, variants }));
-                      }} />
-                    </div>
                     <div>
                       <button type="button" className="px-3 py-2 rounded bg-red-100 text-red-700 font-bold" onClick={() => {
                         const variants = [...form.variants];
@@ -287,7 +251,7 @@ export default function AddProductPage() {
                     </div>
                   </div>
                 ))}
-                <button type="button" className="px-4 py-2 rounded bg-blue-600 text-white font-bold mt-2" onClick={() => setForm(f => ({ ...f, variants: [...(f.variants || []), { type: "color", color: "", size: "", price: "", stockQty: "" }] }))}>Add Variant</button>
+                <button type="button" className="px-4 py-2 rounded bg-blue-600 text-white font-bold mt-2" onClick={() => setForm(f => ({ ...f, variants: [...(f.variants || []), { type: "color", colorName: "", sizeName: "" }] }))}>Add Variant</button>
               </div>
             )}
             {/* Next button */}
@@ -319,7 +283,7 @@ export default function AddProductPage() {
             </div>
             <div className="mt-8 flex justify-between">
               <button type="button" className="px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-bold shadow hover:bg-gray-300 transition" onClick={() => setStep(1)}>Back</button>
-              <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition">Submit Product</button>
+              <button type="submit" className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold shadow hover:bg-blue-700 transition" disabled={loading}>{loading ? "Submitting..." : "Submit Product"}</button>
             </div>
           </form>
         )}

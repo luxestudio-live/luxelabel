@@ -11,22 +11,22 @@ export function Footer() {
           
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 w-full">
             {/* Links */}
-            <div className="flex gap-8 text-sm">
-              <a href="/catalog" className="text-muted-foreground hover:text-foreground transition-colors">
-                Shop
-              </a>
-              <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-                About
-              </a>
-              <a href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-                Contact
-              </a>
+            <div className="flex flex-wrap gap-8 text-sm">
+              <a href="/catalog" className="text-muted-foreground hover:text-foreground transition-colors">Shop</a>
+              <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors">About</a>
+              <a href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+              <a href="/faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+              <a href="/return-policy" className="text-muted-foreground hover:text-foreground transition-colors">Return Policy</a>
+              <a href="/shipping-policy" className="text-muted-foreground hover:text-foreground transition-colors">Shipping Policy</a>
+              <a href="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
+              <a href="/help" className="text-muted-foreground hover:text-foreground transition-colors">Help</a>
+              <a href="/terms" className="text-muted-foreground hover:text-foreground transition-colors">Terms</a>
             </div>
 
             {/* Social Icons */}
             <div className="flex gap-4">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/luxxelabels_/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -73,6 +73,22 @@ export function Footer() {
           {/* Copyright */}
           <div className="text-center text-xs text-muted-foreground">
             © 2025 Luxxe Labels. All rights reserved.
+          </div>
+
+          {/* LuxeStudio Credit */}
+          <div className="flex flex-col items-center mt-6">
+            <div className="w-32 h-px bg-gradient-to-r from-transparent via-primary to-transparent mb-2" />
+            <a
+              href="https://www.luxestudio.live"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-primary hover:text-foreground transition-colors duration-300 flex items-center gap-2"
+              style={{ letterSpacing: '0.05em' }}
+            >
+              <span>Created with</span>
+              <svg className="inline-block h-4 w-4 text-red-500 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"/></svg>
+              <span>by LuxeStudio</span>
+            </a>
           </div>
         </div>
       </div>

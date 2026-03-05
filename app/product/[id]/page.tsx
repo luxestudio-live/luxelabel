@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, FormEvent } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,17 +14,48 @@ import { useCart } from "@/app/cart/CartContext";
 import { db } from "@/lib/firebaseClient";
 import { doc, getDoc, collection, getDocs, addDoc } from "firebase/firestore";
 
+// --- Types ---
+type Variant = {
+  type: string;
+  sizeName?: string;
+  colorName?: string;
+};
+
+type Product = {
+  id: string;
+  name: string;
+  mainImage?: string;
+  gallery?: string[];
+  salePrice?: number;
+  regularPrice?: number;
+  shortDesc?: string;
+  fullDesc?: string;
+  details?: string[];
+  variants?: Variant[];
+  referenceImage?: string;
+  [key: string]: any;
+};
+
+type Review = {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+};
+
 export default function ProductPage() {
   const params = useParams();
-  const id = params && typeof params === "object" && "id" in params ? params.id : undefined;
-  const [product, setProduct] = useState<any>(null);
+  const id = params && typeof params === "object" && "id" in params ? (params.id as string) : undefined;
+  const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [reviewForm, setReviewForm] = useState({ name: "", rating: 5, comment: "" });
-  const [recommended, setRecommended] = useState<any[]>([]);
+  const [sizeOptions, setSizeOptions] = useState<string[]>([]);
+  const [colorOptions, setColorOptions] = useState<string[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewForm, setReviewForm] = useState<{ name: string; rating: number; comment: string }>({ name: "", rating: 5, comment: "" });
+  const [recommended, setRecommended] = useState<Product[]>([]);
   const { addToCart } = useCart();
   const [error, setError] = useState<string>("");
 
@@ -34,18 +66,19 @@ export default function ProductPage() {
         const ref = doc(db, "products", String(id));
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          setProduct({ id: snap.id, ...snap.data() });
-          // Set default variant selections
-          if (snap.data().colors?.length) {
-            setSelectedColor(snap.data().colors[0]);
-          } else {
-            setSelectedColor("Default");
+          const data = { id: snap.id, ...snap.data() } as Product;
+          setProduct(data);
+          // Extract sizes and colors from variants
+          let sizes: string[] = [];
+          let colors: string[] = [];
+          if (Array.isArray(data.variants)) {
+            sizes = data.variants.filter((v: Variant) => v.type === 'size' && v.sizeName).map((v: Variant) => v.sizeName!)
+            colors = data.variants.filter((v: Variant) => v.type === 'color' && v.colorName).map((v: Variant) => v.colorName!)
           }
-          if (snap.data().sizes?.length) {
-            setSelectedSize(snap.data().sizes[0]);
-          } else {
-            setSelectedSize("One Size");
-          }
+          setSizeOptions(sizes.length > 0 ? sizes : ["One Size"]);
+          setColorOptions(colors.length > 0 ? colors : ["Default"]);
+          setSelectedSize(sizes.length > 0 ? sizes[0] : "One Size");
+          setSelectedColor(colors.length > 0 ? colors[0] : "Default");
         }
       } catch (err: any) {
         setError(err.message || "Error fetching product");
@@ -55,7 +88,7 @@ export default function ProductPage() {
       if (!id) return;
       try {
         const snap = await getDocs(collection(db, "products", String(id), "reviews"));
-        setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
       } catch (err: any) {
         setError(err.message || "Error fetching reviews");
       }
@@ -63,7 +96,7 @@ export default function ProductPage() {
     async function fetchRecommended() {
       try {
         const snap = await getDocs(collection(db, "products"));
-        const all = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(p => p.id !== id);
+        const all = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)).filter(p => p.id !== id);
         // Shuffle and pick 3
         const shuffled = [...all];
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -80,7 +113,7 @@ export default function ProductPage() {
     fetchRecommended();
   }, [id]);
 
-  async function handleReviewSubmit(e: any) {
+  async function handleReviewSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!id) return;
     try {
@@ -88,7 +121,7 @@ export default function ProductPage() {
       setReviewForm({ name: "", rating: 5, comment: "" });
       // Refresh reviews
       const snap = await getDocs(collection(db, "products", String(id), "reviews"));
-      setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
     } catch (err: any) {
       setError(err.message || "Error submitting review");
     }
@@ -101,7 +134,12 @@ export default function ProductPage() {
   let images: string[] = [];
   if (product) {
     const gallery = Array.isArray(product.gallery) ? product.gallery : [];
-    const main = product.mainImage;
+    let main = "";
+    if (typeof product.mainImage === "string" && product.mainImage.trim() !== "") {
+      main = product.mainImage;
+    } else if (gallery.length > 0) {
+      main = gallery[0];
+    }
     images = [main, ...gallery.filter((img: string) => img && img !== main)].filter(Boolean);
   }
 
@@ -133,7 +171,7 @@ export default function ProductPage() {
             <div className="flex gap-3 justify-start mt-2">
               {images.map((image: string, index: number) => (
                 <button
-                  key={image}
+                  key={image + index}
                   onClick={() => setSelectedImage(index)}
                   className={`relative w-14 h-14 overflow-hidden rounded-md border-2 transition-colors ${selectedImage === index ? "border-black" : "border-gray-200"}`}
                 >
@@ -151,64 +189,47 @@ export default function ProductPage() {
           <div className="w-full lg:w-1/2 space-y-8">
             <div>
               <h1 className="text-4xl font-semibold mb-4 text-gray-900">{product.name}</h1>
-              <div className="mb-4 flex items-center gap-3">
-                {product.salePrice && product.regularPrice && product.salePrice < product.regularPrice ? (
-                  <span className="text-xl text-gray-400 line-through">Rs. {product.regularPrice}</span>
-                ) : null}
-                <span className="text-2xl font-bold text-black">Rs. {product.salePrice || product.regularPrice}</span>
+              <div className="mb-4 flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  {product.salePrice && product.regularPrice && product.salePrice < product.regularPrice ? (
+                    <span className="text-xl text-gray-400 line-through">Rs. {product.regularPrice}</span>
+                  ) : null}
+                  <span className="text-2xl font-bold text-black">Rs. {product.salePrice || product.regularPrice}</span>
+                </div>
               </div>
               {/* Variant: Size */}
               <div className="mb-4">
                 <div className="text-base font-semibold mb-2">Size</div>
                 <div className="flex gap-2 flex-wrap">
-                  {Array.isArray(product.sizes) && product.sizes.length > 0 && product.sizes.some((s: string) => s && s.trim())
-                    ? product.sizes.filter((s: string) => s && s.trim()).map((size: string) => (
-                        <button
-                          key={size}
-                          onClick={() => setSelectedSize(size)}
-                          className={`px-5 py-2 rounded-full border text-base font-semibold transition-colors ${selectedSize === size ? "bg-black text-white border-black" : "bg-white text-black border-gray-300"}`}
-                        >
-                          {size}
-                        </button>
-                      ))
-                    : ["One Size"].map((size: string) => (
-                        <button
-                          key={size}
-                          onClick={() => setSelectedSize(size)}
-                          className={`px-5 py-2 rounded-full border text-base font-semibold transition-colors ${selectedSize === size ? "bg-black text-white border-black" : "bg-white text-black border-gray-300"}`}
-                        >
-                          {size}
-                        </button>
-                      ))}
+                  {sizeOptions.length === 0 && (
+                    <span className="text-red-500">No sizes found in variants!</span>
+                  )}
+                  {sizeOptions.map((size, idx) => (
+                    <button
+                      key={size + idx}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-5 py-2 rounded-full border text-base font-semibold transition-colors ${selectedSize === size ? "bg-black text-white border-black" : "bg-white text-black border-gray-300"}`}
+                    >
+                      {size}
+                    </button>
+                  ))}
                 </div>
               </div>
               {/* Variant: Color */}
               <div className="mb-4">
                 <div className="text-base font-semibold mb-2">Color</div>
                 <div className="flex gap-3 items-center flex-wrap">
-                  {Array.isArray(product.colors) && product.colors.length > 0 && product.colors.some((c: string) => c && c.trim())
-                    ? product.colors.filter((c: string) => c && c.trim()).map((color: string) => (
-                        <button
-                          key={color}
-                          onClick={() => setSelectedColor(color)}
-                          className={`w-8 h-8 rounded-full border-2 transition-colors ${selectedColor === color ? "border-black ring-2 ring-black" : "border-gray-300"}`}
-                          style={{ background: color === "Default" ? undefined : color }}
-                          aria-label={color}
-                        >
-                          {color === "Default" ? <span className="text-xs text-gray-500">D</span> : null}
-                        </button>
-                      ))
-                    : ["Default"].map((color: string) => (
-                        <button
-                          key={color}
-                          onClick={() => setSelectedColor(color)}
-                          className={`w-8 h-8 rounded-full border-2 transition-colors ${selectedColor === color ? "border-black ring-2 ring-black" : "border-gray-300"}`}
-                          style={{ background: color === "Default" ? undefined : color }}
-                          aria-label={color}
-                        >
-                          {color === "Default" ? <span className="text-xs text-gray-500">D</span> : null}
-                        </button>
-                      ))}
+                  {colorOptions.map((color, idx) => (
+                    <button
+                      key={color + idx}
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-8 h-8 rounded-full border-2 transition-colors ${selectedColor === color ? "border-black ring-2 ring-black" : "border-gray-300"}`}
+                      style={{ background: color === "Default" ? undefined : color }}
+                      aria-label={color}
+                    >
+                      {color === "Default" ? <span className="text-xs text-gray-500">D</span> : null}
+                    </button>
+                  ))}
                   <span className="ml-2 text-sm text-muted-foreground">{selectedColor}</span>
                 </div>
               </div>
@@ -247,8 +268,8 @@ export default function ProductPage() {
                     addToCart({
                       id: product.id,
                       name: product.name,
-                      price: product.salePrice || product.regularPrice,
-                      image: product.mainImage,
+                      price: product.salePrice ?? product.regularPrice ?? 0,
+                      image: product.mainImage ?? "",
                       variant: `${selectedColor}${selectedSize ? ", " + selectedSize : ""}`,
                       quantity,
                     });
@@ -263,38 +284,41 @@ export default function ProductPage() {
                     const buyNowItem = {
                       id: product.id,
                       name: product.name,
-                      price: product.salePrice || product.regularPrice,
-                      image: product.mainImage,
+                      price: product.salePrice ?? product.regularPrice ?? 0,
+                      image: product.mainImage ?? "",
                       variant: `${selectedColor}${selectedSize ? ', ' + selectedSize : ''}`,
                       quantity,
                     };
                     localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-                    window.location.href = "/checkout";
+                    localStorage.setItem("buyNowActive", "true");
+                    globalThis.location.href = "/checkout";
                   }}
                 >
                   Buy Now
                 </Button>
-                              {/* Luxe options below Buy Now */}
-                              <div className="mt-2 flex flex-col gap-2 text-gray-700 text-base">
-                                <div className="flex items-center gap-2">
-                                  <span className="inline-block">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h2m0 0h10a2 2 0 0 1 2 2v2m-14 0v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9m-14 0h14"/></svg>
-                                  </span>
-                                  Free shipping on orders over Rs. 5,000
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="inline-block">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 0v4m0 0h4m-4 0H8"/></svg>
-                                  </span>
-                                  Authentic luxury guarantee
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="inline-block">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 8v4l3 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/></svg>
-                                  </span>
-                                  30-day return policy
-                                </div>
-                              </div>
+                {/* Luxe options below Buy Now */}
+                <div className="mt-2 flex flex-col gap-2 text-gray-700 text-base">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M3 9V7a2 2 0 0 1 2-2h2m0 0h10a2 2 0 0 1 2 2v2m-14 0v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9m-14 0h14"/></svg>
+                    </span><span>Free shipping on orders over Rs. 5,000</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 0v4m0 0h4m-4 0H8"/></svg>
+                    </span><span>Authentic luxury guarantee</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 8v4l3 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/></svg>
+                    </span><span>For returns, contact support</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="inline-block">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 8v4l3 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"/></svg>
+                    </span><span>Shipping Time: <span className="font-semibold ml-1">1 Month</span></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -312,7 +336,7 @@ export default function ProductPage() {
               // Set minHeight for text to match image
               const minHeight = imgHeight;
               return <>
-                <div className="prose prose-lg max-w-none text-gray-800 min-w-[250px] w-full md:w-1/2 flex-1 wrap-break-word" style={{wordBreak:'break-word', minHeight}} dangerouslySetInnerHTML={{ __html: product.fullDesc }} />
+                <div className="prose prose-lg max-w-none text-gray-800 min-w-62.5 w-full md:w-1/2 flex-1 wrap-break-word" style={{wordBreak:'break-word', minHeight}} dangerouslySetInnerHTML={{ __html: product.fullDesc }} />
                 {/* Reference image: use product.referenceImage, else pick any image from gallery except main */}
                 {(() => {
                   let refImg = product.referenceImage;
@@ -321,7 +345,7 @@ export default function ProductPage() {
                     refImg = product.gallery.find((img: string) => img !== product.mainImage) || product.gallery[1];
                   }
                   return refImg ? (
-                    <div className="w-full md:w-1/2 shrink-0 flex items-center justify-center min-w-[250px]">
+                    <div className="w-full md:w-1/2 shrink-0 flex items-center justify-center min-w-62.5">
                       <Image src={getImageUrl(refImg)} alt="Description Reference" width={imgWidth} height={imgHeight} className="rounded-xl object-cover w-full h-auto" />
                     </div>
                   ) : null;
@@ -375,7 +399,11 @@ export default function ProductPage() {
               <Link key={p.id} href={`/product/${p.id}`} className="group cursor-pointer">
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 mb-4 shadow-lg">
                   <Image
-                    src={getImageUrl(p.mainImage || p.image)}
+                    src={getImageUrl(
+                      p.mainImage
+                      || p.image
+                      || (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : "")
+                    )}
                     alt={p.name}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"

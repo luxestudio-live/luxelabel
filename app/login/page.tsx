@@ -65,6 +65,8 @@ export default function LoginPage() {
     setSuccess("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // Set userLoggedIn cookie for middleware
+      document.cookie = "userLoggedIn=true; path=/;";
       setSuccess("Logged in Successfully");
       setTimeout(() => {
         router.push("/");
@@ -86,6 +88,8 @@ export default function LoginPage() {
     setErrors({});
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
+      // Set userLoggedIn cookie for middleware
+      document.cookie = "userLoggedIn=true; path=/;";
       setSuccess("Logged in Successfully");
       setTimeout(() => {
         router.push("/");
@@ -136,6 +140,8 @@ export default function LoginPage() {
         return;
       }
       await confirmationResult.confirm(otp);
+      // Set userLoggedIn cookie for middleware
+      document.cookie = "userLoggedIn=true; path=/;";
       setSuccess("Logged in Successfully");
       setTimeout(() => {
         router.push("/");

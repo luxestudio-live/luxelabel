@@ -1,3 +1,4 @@
+"use client";
 import AdminLayout from "../../AdminLayout";
 
 const dummyReturn = {
@@ -77,10 +78,3 @@ export default function ReturnDetailPage() {
   );
 }
 
-// Required for static export
-export function generateStaticParams() {
-  return [
-    { id: "R1001" },
-    { id: "R1002" },
-  ];
-}

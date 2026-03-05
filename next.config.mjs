@@ -2,8 +2,8 @@
 const nextConfig = {
   // output: 'export',
   trailingSlash: true,
-  basePath: process.env.NODE_ENV === 'production' ? '/luxelabel' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/luxelabel/' : '',
+  basePath: '',
+  assetPrefix: '',
   // eslint config removed (deprecated in Next.js)
   typescript: {
     ignoreBuildErrors: true,

@@ -1,11 +1,4 @@
-export function generateStaticParams() {
-  // Dummy customer IDs for static export
-  return [
-    { id: "1" },
-    { id: "2" },
-    { id: "3" },
-  ];
-}
+"use client";
 import AdminLayout from "../../AdminLayout";
 import Link from "next/link";
 

@@ -32,15 +32,19 @@ export default function HelpPage() {
               <input name="email" type="email" required placeholder="Email" className="border p-3 rounded w-full" value={form.email} onChange={handleChange} />
               <input name="phone" type="tel" placeholder="Phone" className="border p-3 rounded w-full" value={form.phone} onChange={handleChange} />
               <input name="subject" type="text" required placeholder="Subject" className="border p-3 rounded w-full" value={form.subject} onChange={handleChange} />
-              <textarea name="message" required placeholder="Message" className="border p-3 rounded w-full min-h-[100px]" value={form.message} onChange={handleChange} />
+              <textarea name="message" required placeholder="Message" className="border p-3 rounded w-full min-h-25" value={form.message} onChange={handleChange} />
               <button type="submit" className="bg-primary text-white px-6 py-2 rounded font-semibold">Submit</button>
             </form>
           )}
         </div>
         <div className="mb-8">
+          <h2 className="font-semibold text-lg mb-2 text-secondary">Returns</h2>
+          <div className="text-muted-foreground text-sm">
+            For any return requests, please contact our support team using the form above or email suppot@luxelabels.co.in.
+          </div>
           <h2 className="font-semibold text-lg mb-2 text-secondary">Other Contact Options</h2>
           <div className="space-y-2 text-muted-foreground text-sm">
-            <div>Email: <a href="mailto:support@luxelabel.in" className="text-primary underline">support@luxelabel.in</a></div>
+            <div>Email: <a href="mailto:suppot@luxelabels.co.in" className="text-primary underline">suppot@luxelabels.co.in</a></div>
             <div>Phone/WhatsApp: <a href="tel:+919876543210" className="text-primary underline">+91 98765 43210</a></div>
             <div>Working hours: Mon-Sat, 10am-7pm</div>
           </div>

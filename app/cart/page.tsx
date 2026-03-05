@@ -1,12 +1,18 @@
 "use client";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "./CartContext";
 
 
 export default function CartPage() {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("buyNowItem");
+      localStorage.removeItem("buyNowActive");
+    }
+  }, []);
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
 
   const handleQuantity = (id: number, delta: number) => {
@@ -33,9 +39,9 @@ export default function CartPage() {
 
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const estimatedTax = subtotal * 0.08;
-  const shipping = subtotal > 500 ? 0 : 20;
-  const total = subtotal + estimatedTax + shipping;
+  // Shipping charges are calculated on checkout page only
+  const shipping = 0;
+  const total = subtotal;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -125,12 +131,8 @@ export default function CartPage() {
                     <span>₹{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between mb-2">
-                    <span>Estimated Tax</span>
-                    <span>₹{estimatedTax.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Shipping</span>
-                    <span>{shipping === 0 ? "Free" : `₹${shipping.toLocaleString()}`}</span>
+                    <span>Shipping charges</span>
+                    <span>will be calculated on Checkout page</span>
                   </div>
                   {/* Discount removed from cart page. Use on checkout page only. */}
                   <div className="flex justify-between font-bold text-lg mt-4">

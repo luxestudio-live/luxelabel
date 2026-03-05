@@ -10,8 +10,9 @@ if (typeof fetch === 'undefined') {
 
 
 // Use REST API call instead of SDK for serverless compatibility
-const RAZORPAY_KEY_ID = 'rzp_test_RjmxgXfQRU1nog';
-const RAZORPAY_KEY_SECRET = 'Ck8w1h8dvV51kalk5ucXKfAA';
+// Razorpay keys are now loaded from environment variables for security
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 
 

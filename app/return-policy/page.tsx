@@ -10,7 +10,7 @@ const sections = [
   },
   {
     title: "How to Request a Return",
-    content: "Go to your order details and click 'Request return', or contact support via the Help page."
+    content: "To request a return, please contact our support team via the Help page or email suppot@luxelabels.co.in."
   },
   {
     title: "Refunds & Timelines",
@@ -22,7 +22,7 @@ const sections = [
   },
   {
     title: "Contact Information",
-    content: "For return queries, email support@luxelabel.in or use the Help page."
+    content: "For return queries, email suppot@luxelabels.co.in or use the Help page."
   },
 ];
 

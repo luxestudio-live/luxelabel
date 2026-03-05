@@ -10,7 +10,7 @@ const sections = [
   },
   {
     title: "Estimated Delivery Timelines",
-    content: "Metro cities: 2-4 days. Other regions: 4-7 days. International: 7-15 days. Delays may occur during peak periods."
+    content: "All orders, regardless of location, will be shipped in approximately 1 month from the date of order."
   },
   {
     title: "Handling & Cut-Off Times",
@@ -26,7 +26,7 @@ const sections = [
   },
   {
     title: "Contact Information",
-    content: "For shipping queries, email support@luxelabel.in or use the Help page."
+    content: "For shipping queries, email suppot@luxelabels.co.in or use the Help page."
   },
 ];
 

@@ -1,6 +1,8 @@
 "use client";
-
 import Link from "next/link";
+
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 const sidebarLinks = [
   { label: "Dashboard", href: "/admin/dashboard" },
@@ -13,7 +15,6 @@ const sidebarLinks = [
   { label: "Returns", href: "/admin/returns" },
   { label: "Sales Report", href: "/admin/reports/sales" },
   { label: "Inventory Report", href: "/admin/reports/inventory" },
-
 ];
 
 const headerFilters = [
@@ -27,10 +28,33 @@ const headerFilters = [
   { key: "custom", label: "Custom Range" },
 ];
 
-import { useState } from "react";
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }) {
   const [filter, setFilter] = useState("today");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Client-side admin session enforcement
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isLoggedIn = localStorage.getItem("adminLoggedIn") === "true";
+      setLoggedIn(isLoggedIn);
+      // If not logged in and not on login page, redirect to login
+      if (!isLoggedIn && pathname !== "/admin/login") {
+        router.replace("/admin/login");
+      }
+    }
+  }, [pathname, router]);
+
+  function handleLogout() {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("adminLoggedIn");
+      document.cookie = "adminLoggedIn=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setLoggedIn(false);
+      router.replace("/admin/login");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50 to-purple-100">
       {/* Fixed Sidebar */}
@@ -41,6 +65,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {link.label}
           </Link>
         ))}
+        {loggedIn && (
+          <button
+            onClick={handleLogout}
+            className="mt-8 py-2 px-4 rounded bg-red-500 text-white font-bold hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
+        )}
       </nav>
       {/* Sticky Header */}
       <header className="sticky top-0 z-40 ml-56" style={{ width: 'calc(100% - 14rem)', overflowX: 'hidden' }}>
@@ -69,5 +101,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {children}
       </div>
     </div>
-  );
+	);
 }
