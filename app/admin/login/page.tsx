@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebaseClient";
@@ -8,35 +8,56 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  async function completeAdminLogin(uid: string) {
+    const { db } = await import("@/lib/firebaseClient");
+    const { doc, getDoc } = await import("firebase/firestore");
+    const userRef = doc(db, "users", uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists() || userSnap.data()?.isAdmin !== true) {
+      setError("Your account is logged in, but does not have admin access (users/{uid}.isAdmin must be true).");
+      await import("firebase/auth").then(m => m.signOut(auth));
+      return;
+    }
+
+    localStorage.setItem("adminLoggedIn", "true");
+    document.cookie = "adminLoggedIn=true; path=/;";
+    router.replace("/admin/dashboard");
+  }
+
+  useEffect(() => {
+    const existingUser = auth.currentUser;
+    if (!existingUser) return;
+    completeAdminLogin(existingUser.uid).catch(() => {});
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setLoading(true);
     try {
-      const userCred = await signInWithEmailAndPassword(auth, email, password);
-      const { db } = await import("@/lib/firebaseClient");
-      const { doc, getDoc, setDoc } = await import("firebase/firestore");
-      const userRef = doc(db, "users", userCred.user.uid);
-      let userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        // Create user doc with isAdmin false by default
-        await setDoc(userRef, {
-          email: userCred.user.email,
-          isAdmin: false,
-        });
-        userSnap = await getDoc(userRef);
-      }
-      if (!userSnap.data().isAdmin) {
-        setError("You are not authorized to access the admin panel.");
-        await import("firebase/auth").then(m => m.signOut(auth));
-        return;
-      }
-      localStorage.setItem("adminLoggedIn", "true");
-      document.cookie = "adminLoggedIn=true; path=/;";
-      router.replace("/admin/dashboard");
+      const normalizedEmail = email.trim().toLowerCase();
+      const userCred = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      await completeAdminLogin(userCred.user.uid);
     } catch (err: any) {
-      setError("Invalid credentials");
+      if (err?.code === "auth/invalid-credential") {
+        setError("Invalid email or password. If this admin account uses Google/Phone login, sign in there first, then open admin.");
+      } else if (err?.code === "auth/user-not-found") {
+        setError("No Firebase Auth user found for this email.");
+      } else if (err?.code === "auth/wrong-password") {
+        setError("Incorrect password.");
+      } else if (err?.code === "auth/too-many-requests") {
+        setError("Too many failed attempts. Please wait and try again.");
+      } else if (err?.code === "auth/operation-not-allowed") {
+        setError("Email/password sign-in is disabled in Firebase Authentication for this project.");
+      } else {
+        setError(err?.message || "Admin login failed.");
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -61,7 +82,7 @@ export default function AdminLogin() {
           onChange={e => setPassword(e.target.value)}
           required
         />
-        <button type="submit" className="w-full py-3 rounded bg-primary text-white font-bold text-lg hover:bg-primary/90 transition">Login</button>
+        <button type="submit" disabled={loading} className="w-full py-3 rounded bg-primary text-white font-bold text-lg hover:bg-primary/90 transition disabled:opacity-70">{loading ? "Logging in..." : "Login"}</button>
       </form>
     </div>
   );
